@@ -33,7 +33,7 @@ Obsidian is the source of truth. The vector DB is derived — never edit it dire
 
 ## Phase 1 — Extract to Obsidian
 
-Defined in [DESIGN-knowledge.md](./DESIGN-knowledge.md). Input: PDF/DOCX/HTML. Output: approved markdown notes + MOCs in `vault/` with frontmatter (`status`, `domain`, `tags`, `confidence`). Consumed by Phase 2's indexer.
+Defined in [DESIGN-knowledge.md](./DESIGN-knowledge.md). Input: PDF/DOCX/HTML (knowledge sources — not translation targets). Output: approved markdown notes + MOCs in `vault/` with frontmatter (`status`, `domain`, `tags`, `confidence`). Consumed by Phase 2's indexer.
 
 ## Phase 2 — Index to vector DB
 

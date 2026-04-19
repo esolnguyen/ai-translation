@@ -1,1 +1,27 @@
 .claude/settings.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Vault: track structure (INDEX templates, .obsidian config, .gitkeep markers).
+# Per-user notes (all other .md files) are not tracked.
+vault/**/*.md
+!vault/INDEX.md
+!vault/**/INDEX.md
+
+# Source documents fed into the extractor (PDFs, DOCX, HTML). Not tracked.
+sources/
+
+# KB backing stores (derived from vault — rebuildable via `kb index`)
+.kb/
+
+# Translation run scratchpads
+.translate-runs/
