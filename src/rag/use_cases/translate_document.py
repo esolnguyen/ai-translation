@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from ..domain import RunConfig, RunPaths, Unit, TranslatedUnit
+from .mode_select import should_use_simple
 from .ports import (
     DocumentAdapter,
     PipelineRunner,
@@ -45,9 +46,11 @@ class TranslateDocument:
         document_adapter_factory: DocumentAdapterFactory,
         runner: PipelineRunner,
         repository: RunRepository,
+        simple_runner: PipelineRunner | None = None,
     ) -> None:
         self._adapter_for = document_adapter_factory
         self._runner = runner
+        self._simple_runner = simple_runner
         self._repository = repository
 
     def execute(self, config: RunConfig) -> TranslateReport:
@@ -66,7 +69,8 @@ class TranslateDocument:
         for lang in config.target_langs:
             state.branch(lang)
 
-        state = self._runner.run(state)
+        runner = self._pick_runner(config, units)
+        state = runner.run(state)
 
         outputs: dict[str, Path] = {}
         per_lang: dict[str, dict[str, Any]] = {}
@@ -83,6 +87,11 @@ class TranslateDocument:
                 "chunks_escalated": branch.chunks_escalated,
                 "output_path": str(outputs.get(lang, "")),
             }
+            if branch.roundtrip_reports:
+                per_lang[lang]["roundtrip"] = {
+                    "chunks": len(branch.roundtrip_reports),
+                    "mean_similarity": branch.roundtrip_mean_similarity,
+                }
 
         final_manifest = _build_manifest(
             config,
@@ -96,6 +105,11 @@ class TranslateDocument:
             outputs=outputs,
             per_lang=per_lang,
         )
+
+    def _pick_runner(self, config: RunConfig, units: list[Unit]) -> PipelineRunner:
+        if self._simple_runner is not None and should_use_simple(config, units):
+            return self._simple_runner
+        return self._runner
 
 
 def _new_run_id(source: Path) -> str:

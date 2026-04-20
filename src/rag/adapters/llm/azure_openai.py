@@ -5,12 +5,14 @@ api version and key are read from env by ``from_env()``.
 """
 
 from __future__ import annotations
-
 import os
 from collections.abc import Sequence
 from dataclasses import dataclass
-
+from typing import TYPE_CHECKING, cast
 from ...use_cases.ports import LLMClient, LLMMessage
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionMessageParam
 
 
 @dataclass(slots=True, frozen=True)
@@ -42,7 +44,11 @@ class AzureOpenAIClient(LLMClient):
     def from_env(cls) -> AzureOpenAIClient:
         missing = [
             name
-            for name in ("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_DEPLOYMENT")
+            for name in (
+                "AZURE_OPENAI_ENDPOINT",
+                "AZURE_OPENAI_API_KEY",
+                "AZURE_OPENAI_DEPLOYMENT",
+            )
             if not os.environ.get(name)
         ]
         if missing:
@@ -63,9 +69,13 @@ class AzureOpenAIClient(LLMClient):
         temperature: float = 0.0,
         max_tokens: int | None = None,
     ) -> str:
+        payload = cast(
+            "list[ChatCompletionMessageParam]",
+            [{"role": m.role, "content": m.content} for m in messages],
+        )
         response = self._client.chat.completions.create(
             model=self._config.deployment,
-            messages=[{"role": m.role, "content": m.content} for m in messages],
+            messages=payload,
             temperature=temperature,
             max_tokens=max_tokens,
         )

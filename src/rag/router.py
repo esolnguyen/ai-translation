@@ -9,7 +9,7 @@ from __future__ import annotations
 from .adapters.documents import make_document_adapter
 from .adapters.llm import make_llm_client
 from .adapters.persistence import make_run_repository, make_term_cache
-from .adapters.pipeline import make_pipeline_runner
+from .adapters.pipeline import make_pipeline_runner, make_simple_pipeline_runner
 from .adapters.retrieval import make_retriever
 from .domain import RunConfig
 from .use_cases.ports import PipelineDependencies
@@ -27,7 +27,8 @@ def translate(config: RunConfig) -> TranslateReport:
     )
     use_case = TranslateDocument(
         document_adapter_factory=make_document_adapter,
-        runner=make_pipeline_runner(deps),
+        runner=make_pipeline_runner(deps, roundtrip=config.roundtrip),
+        simple_runner=make_simple_pipeline_runner(deps),
         repository=repository,
     )
     return use_case.execute(config)

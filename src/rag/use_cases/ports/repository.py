@@ -62,6 +62,24 @@ class RunRepository(ABC):
         """Persist the per-language repair audit — one entry per chunk."""
 
     @abstractmethod
+    def write_review(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        """Persist the per-language reviewer audit — one entry per chunk."""
+
+    @abstractmethod
+    def write_roundtrip(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        """Persist the per-language back-translation QA audit."""
+
+    @abstractmethod
     def finalize_manifest(
         self,
         paths: RunPaths,

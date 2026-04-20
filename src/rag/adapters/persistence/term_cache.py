@@ -8,7 +8,6 @@ stale lookups automatically.
 """
 
 from __future__ import annotations
-
 import hashlib
 import json
 from collections.abc import Mapping
@@ -81,7 +80,9 @@ class JsonTermLookupCache(TermLookupCache):
             return
         entries = data.get("entries") if isinstance(data, dict) else None
         if isinstance(entries, dict):
-            self._entries = {k: dict(v) for k, v in entries.items() if isinstance(v, dict)}
+            self._entries = {
+                k: dict(v) for k, v in entries.items() if isinstance(v, dict)
+            }
 
 
 def _make_key(term: str, domain: str | None, target_lang: str | None) -> str:

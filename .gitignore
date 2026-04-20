@@ -1,5 +1,10 @@
 .claude/settings.local.json
 
+# Secrets — keep the template (.env.example) tracked, ignore real values.
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]

@@ -12,10 +12,8 @@ layer is <500 lines, easy to test, and the node functions stay portable.
 """
 
 from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass, field
-
 from ...use_cases.ports import RunState
 
 type Node = Callable[[RunState], RunState]

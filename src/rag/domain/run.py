@@ -26,6 +26,10 @@ class RunConfig:
     kb_vault: Path = field(default_factory=lambda: Path("./vault"))
     kb_store: Path = field(default_factory=lambda: Path("./.kb"))
     dry_run: bool = False
+    simple_mode: bool | None = None   # None = auto; True/False = explicit
+    simple_word_threshold: int = 500  # auto-select simple when below this
+    simple_chunk_threshold: int = 3   # ...and fewer than this many units
+    roundtrip: bool = False           # back-translation QA leg (off by default)
 
     @property
     def run_dir(self) -> Path:
@@ -65,3 +69,9 @@ class RunPaths:
 
     def repair(self, target_lang: str) -> Path:
         return self.run_dir / target_lang / "repair.json"
+
+    def review(self, target_lang: str) -> Path:
+        return self.run_dir / target_lang / "review.json"
+
+    def roundtrip(self, target_lang: str) -> Path:
+        return self.run_dir / target_lang / "roundtrip.json"

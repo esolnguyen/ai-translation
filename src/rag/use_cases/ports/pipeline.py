@@ -23,7 +23,9 @@ from ...domain import (
     TranslationFlag,
     Unit,
 )
+from .embedder import Embedder
 from .llm import LLMClient
+from .metrics import CustomCheckRegistry, MetricProfileRegistry
 from .repository import RunRepository
 from .retrieval import KnowledgeRetriever
 from .term_cache import TermLookupCache
@@ -43,6 +45,8 @@ class LangBranchState:
     chunks_passed: int = 0
     chunks_retried: int = 0
     chunks_escalated: int = 0
+    roundtrip_reports: list[dict[str, Any]] = field(default_factory=list)
+    roundtrip_mean_similarity: float | None = None
 
 
 @dataclass(slots=True)
@@ -79,6 +83,9 @@ class PipelineDependencies:
     retriever: KnowledgeRetriever
     repository: RunRepository
     term_cache: TermLookupCache | None = None
+    embedder: Embedder | None = None
+    profile_registry: MetricProfileRegistry | None = None
+    custom_check_registry: CustomCheckRegistry | None = None
 
 
 class PipelineRunner(ABC):
