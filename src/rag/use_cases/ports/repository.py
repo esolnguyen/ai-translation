@@ -53,6 +53,15 @@ class RunRepository(ABC):
         """Persist the per-language translated units."""
 
     @abstractmethod
+    def write_repair(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        """Persist the per-language repair audit — one entry per chunk."""
+
+    @abstractmethod
     def finalize_manifest(
         self,
         paths: RunPaths,

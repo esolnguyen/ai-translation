@@ -1,9 +1,10 @@
-"""Default graph node functions.
+"""Default graph node functions (Rev 3 topology).
 
-Real use-case calls start landing here per milestone:
+analyze → resolve_terms → glossary(per-lang) → translate(per-lang)
+       → repair(per-lang) → review(per-lang)
 
-- M1: every node is a stub that records an event.
-- M2: ``analyze`` + ``resolve_terms`` call into use-cases; the rest stay stubs.
+Cycle-check, triangulate, and a standalone editor are gone — their jobs
+are absorbed by Translator self-flagging + the unified Repair node.
 
 Node functions close over a ``PipelineDependencies`` bundle so the graph
 itself carries no framework knowledge.
@@ -11,10 +12,14 @@ itself carries no framework knowledge.
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
 from ...use_cases.analyze import AnalyzeDocument
 from ...use_cases.build_glossary import BuildGlossary
 from ...use_cases.ports import PipelineDependencies, RunState
+from ...use_cases.repair_chunk import RepairChunk
 from ...use_cases.resolve_terms import ResolveTerms
+from ...use_cases.translate_chunk import TranslateChunk
 from .graph import Graph, NodeSpec
 
 
@@ -24,6 +29,8 @@ def build_default_graph(deps: PipelineDependencies) -> Graph:
     glossary_builder = BuildGlossary(
         retriever=deps.retriever, lookup_cache=deps.term_cache
     )
+    translator = TranslateChunk(llm=deps.llm, retriever=deps.retriever)
+    repairer = RepairChunk(llm=deps.llm)
 
     def analyze(state: RunState) -> RunState:
         output = analyzer.execute(
@@ -93,51 +100,108 @@ def build_default_graph(deps: PipelineDependencies) -> Graph:
         )
         return state
 
-    def translate_p1(state: RunState, lang: str) -> RunState:
+    def translate(state: RunState, lang: str) -> RunState:
         branch = state.branch(lang)
         branch.chunks_total = len(state.units)
-        state.record("translate_p1", {"lang": lang, "chunks": branch.chunks_total})
+        branch.flags_by_unit = {}
+        flagged_units = 0
+        for unit in state.units:
+            output = translator.execute(
+                unit,
+                target_lang=lang,
+                source_lang=state.config.source_lang,
+                analysis=state.analysis,
+                glossary=branch.glossary,
+            )
+            branch.translations[unit.id] = output.translated
+            if output.flags:
+                branch.flags_by_unit[unit.id] = list(output.flags)
+                flagged_units += 1
+        deps.repository.write_translated(
+            state.paths, lang, branch.translations.values()
+        )
+        state.record(
+            "translate",
+            {
+                "lang": lang,
+                "chunks": branch.chunks_total,
+                "flagged": flagged_units,
+            },
+        )
         return state
 
-    def cycle_check(state: RunState, lang: str) -> RunState:
-        state.record("cycle_check", {"lang": lang})
-        return state
-
-    def translate_p2(state: RunState, lang: str) -> RunState:
-        state.record("translate_p2", {"lang": lang})
-        return state
-
-    def triangulate(state: RunState) -> RunState:
-        state.record("triangulate", {"langs": list(state.branches)})
+    def repair(state: RunState, lang: str) -> RunState:
+        branch = state.branch(lang)
+        reports: list[dict] = []
+        repaired = 0
+        escalated = 0
+        for unit in state.units:
+            flags = branch.flags_by_unit.get(unit.id, [])
+            failures = branch.failures_by_unit.get(unit.id, [])
+            if not flags and not failures:
+                continue
+            current = branch.translations[unit.id]
+            output = repairer.execute(
+                current,
+                flags=flags,
+                failures=failures,
+                source_text=unit.text,
+                source_lang=state.config.source_lang,
+                target_lang=lang,
+                analysis=state.analysis,
+                glossary=branch.glossary,
+                pass_count=branch.repair_passes.get(unit.id, 0),
+            )
+            branch.translations[unit.id] = output.translated
+            branch.repair_passes[unit.id] = output.report.pass_count
+            reports.append(asdict(output.report))
+            if output.report.escalated:
+                escalated += 1
+            elif output.report.actions:
+                repaired += 1
+            branch.flags_by_unit.pop(unit.id, None)
+        branch.chunks_retried = repaired
+        branch.chunks_escalated = escalated
+        if reports:
+            deps.repository.write_translated(
+                state.paths, lang, branch.translations.values()
+            )
+        deps.repository.write_repair(state.paths, lang, reports)
+        state.record(
+            "repair",
+            {
+                "lang": lang,
+                "repaired": repaired,
+                "escalated": escalated,
+                "chunks": len(reports),
+            },
+        )
         return state
 
     def review(state: RunState, lang: str) -> RunState:
         branch = state.branch(lang)
-        branch.chunks_passed = branch.chunks_total
-        state.record("review", {"lang": lang, "passed": branch.chunks_passed})
-        return state
-
-    def edit(state: RunState, lang: str) -> RunState:
-        state.record("edit", {"lang": lang})
+        branch.chunks_passed = branch.chunks_total - branch.chunks_escalated
+        state.record(
+            "review",
+            {
+                "lang": lang,
+                "passed": branch.chunks_passed,
+                "escalated": branch.chunks_escalated,
+            },
+        )
         return state
 
     graph = Graph(entry="analyze")
     graph.add(NodeSpec("analyze", analyze))
     graph.add(NodeSpec("resolve_terms", resolve_terms))
     graph.add(NodeSpec("glossary", glossary, per_lang=True))
-    graph.add(NodeSpec("translate_p1", translate_p1, per_lang=True))
-    graph.add(NodeSpec("cycle_check", cycle_check, per_lang=True))
-    graph.add(NodeSpec("translate_p2", translate_p2, per_lang=True))
-    graph.add(NodeSpec("triangulate", triangulate))
+    graph.add(NodeSpec("translate", translate, per_lang=True))
+    graph.add(NodeSpec("repair", repair, per_lang=True))
     graph.add(NodeSpec("review", review, per_lang=True))
-    graph.add(NodeSpec("edit", edit, per_lang=True))
 
     graph.connect("analyze", "resolve_terms")
     graph.connect("resolve_terms", "glossary")
-    graph.connect("glossary", "translate_p1")
-    graph.connect("translate_p1", "cycle_check")
-    graph.connect("cycle_check", "translate_p2")
-    graph.connect("translate_p2", "triangulate")
-    graph.connect("triangulate", "review")
-    graph.connect("review", "edit")
+    graph.connect("glossary", "translate")
+    graph.connect("translate", "repair")
+    graph.connect("repair", "review")
     return graph

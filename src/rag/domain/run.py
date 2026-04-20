@@ -63,5 +63,5 @@ class RunPaths:
     def review_dir(self, target_lang: str) -> Path:
         return self.run_dir / target_lang / "review"
 
-    def triangulate_dir(self) -> Path:
-        return self.run_dir / "triangulate"
+    def repair(self, target_lang: str) -> Path:
+        return self.run_dir / target_lang / "repair.json"
