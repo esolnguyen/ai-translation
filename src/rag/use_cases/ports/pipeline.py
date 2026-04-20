@@ -25,6 +25,7 @@ from ...domain import (
 from .llm import LLMClient
 from .repository import RunRepository
 from .retrieval import KnowledgeRetriever
+from .term_cache import TermLookupCache
 
 
 @dataclass(slots=True)
@@ -73,6 +74,7 @@ class PipelineDependencies:
     llm: LLMClient
     retriever: KnowledgeRetriever
     repository: RunRepository
+    term_cache: TermLookupCache | None = None
 
 
 class PipelineRunner(ABC):

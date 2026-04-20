@@ -20,8 +20,10 @@ from .graph import Graph, NodeSpec
 
 def build_default_graph(deps: PipelineDependencies) -> Graph:
     analyzer = AnalyzeDocument(llm=deps.llm, retriever=deps.retriever)
-    resolver = ResolveTerms(retriever=deps.retriever)
-    glossary_builder = BuildGlossary(retriever=deps.retriever)
+    resolver = ResolveTerms(retriever=deps.retriever, lookup_cache=deps.term_cache)
+    glossary_builder = BuildGlossary(
+        retriever=deps.retriever, lookup_cache=deps.term_cache
+    )
 
     def analyze(state: RunState) -> RunState:
         output = analyzer.execute(
@@ -63,26 +65,30 @@ def build_default_graph(deps: PipelineDependencies) -> Graph:
                 "terms_total": output.total,
                 "terms_resolved": output.resolved,
                 "hit_rate": round(output.hit_rate, 3),
+                "cache_hits": output.cache_hits,
+                "cache_misses": output.cache_misses,
             },
         )
         return state
 
     def glossary(state: RunState, lang: str) -> RunState:
         domain = state.analysis.domain if state.analysis else None
-        entries = glossary_builder.execute(
+        output = glossary_builder.execute(
             state.term_cache,
             target_lang=lang,
             domain=domain,
         )
         branch = state.branch(lang)
-        branch.glossary = entries
-        deps.repository.write_glossary(state.paths, lang, entries)
+        branch.glossary = output.entries
+        deps.repository.write_glossary(state.paths, lang, output.entries)
         state.record(
             "glossary",
             {
                 "lang": lang,
                 "cached_terms": len(state.term_cache),
-                "entries": len(entries),
+                "entries": len(output.entries),
+                "cache_hits": output.cache_hits,
+                "cache_misses": output.cache_misses,
             },
         )
         return state

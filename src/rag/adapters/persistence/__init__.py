@@ -11,6 +11,7 @@ from typing import Literal
 
 from ...use_cases.ports import RunRepository
 from .filesystem import FilesystemRunRepository
+from .term_cache import JsonTermLookupCache, make_term_cache
 
 type RepositoryKind = Literal["filesystem", "mongo"]
 
@@ -24,4 +25,9 @@ def make_run_repository(kind: RepositoryKind = "filesystem") -> RunRepository:
     raise ValueError(f"unknown repository kind: {kind}")
 
 
-__all__ = ["FilesystemRunRepository", "make_run_repository"]
+__all__ = [
+    "FilesystemRunRepository",
+    "JsonTermLookupCache",
+    "make_run_repository",
+    "make_term_cache",
+]

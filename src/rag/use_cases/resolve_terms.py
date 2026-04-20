@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..domain import Unit
-from .ports import KnowledgeRetriever
+from .ports import KnowledgeRetriever, TermLookupCache
 
 _PROPER_PHRASE = re.compile(r"\b(?:[A-Z][a-z0-9]+(?:\s+[A-Z][a-z0-9]+)+)\b")
 _ACRONYM = re.compile(r"\b[A-Z]{2,6}(?:-[A-Z0-9]+)?\b")
@@ -29,6 +29,8 @@ class ResolveOutput:
     cache: dict[str, dict[str, Any]] = field(default_factory=dict)
     total: int = 0
     resolved: int = 0
+    cache_hits: int = 0
+    cache_misses: int = 0
 
     @property
     def hit_rate(self) -> float:
@@ -36,8 +38,14 @@ class ResolveOutput:
 
 
 class ResolveTerms:
-    def __init__(self, *, retriever: KnowledgeRetriever) -> None:
+    def __init__(
+        self,
+        *,
+        retriever: KnowledgeRetriever,
+        lookup_cache: TermLookupCache | None = None,
+    ) -> None:
         self._retriever = retriever
+        self._lookup_cache = lookup_cache
 
     def execute(
         self,
@@ -51,17 +59,35 @@ class ResolveTerms:
         )
         out = ResolveOutput(total=len(candidates))
         for term in candidates:
-            entry: dict[str, Any] = {"entity": None, "notes": []}
-            entity = self._retriever.entity(term)
-            if entity is not None:
-                entry["entity"] = entity
-            hits = self._retriever.search(term, domain=domain, k=1)
-            if hits:
-                entry["notes"] = hits
+            entry, hit = self._lookup(term, domain)
+            if hit:
+                out.cache_hits += 1
+            else:
+                out.cache_misses += 1
             if entry["entity"] is not None or entry["notes"]:
                 out.resolved += 1
             out.cache[term] = entry
+        if self._lookup_cache is not None:
+            self._lookup_cache.flush()
         return out
+
+    def _lookup(
+        self, term: str, domain: str | None
+    ) -> tuple[dict[str, Any], bool]:
+        if self._lookup_cache is not None:
+            cached = self._lookup_cache.get(term, domain=domain, target_lang=None)
+            if cached is not None:
+                return cached, True
+        entry: dict[str, Any] = {"entity": None, "notes": []}
+        entity = self._retriever.entity(term)
+        if entity is not None:
+            entry["entity"] = entity
+        hits = self._retriever.search(term, domain=domain, k=1)
+        if hits:
+            entry["notes"] = hits
+        if self._lookup_cache is not None:
+            self._lookup_cache.put(term, domain=domain, target_lang=None, payload=entry)
+        return entry, False
 
 
 def _heuristic_candidates(units: list[Unit]) -> list[str]:
