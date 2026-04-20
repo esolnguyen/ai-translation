@@ -27,14 +27,24 @@ rag = [
 ]
 azure-openai = ["openai>=1.40"]
 gemini = ["google-genai>=0.8"]
+api = [
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "python-multipart>=0.0.9",
+    "python-dotenv>=1.0",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "python-multipart>=0.0.9",
 ]
 
 [project.scripts]
 kb = "knowledge.cli.main:main"
 translate = "rag.frameworks.cli:main"
+translate-api = "rag.frameworks.api:main"
 
 [build-system]
 requires = ["hatchling"]

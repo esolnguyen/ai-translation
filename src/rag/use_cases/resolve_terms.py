@@ -71,9 +71,7 @@ class ResolveTerms:
             self._lookup_cache.flush()
         return out
 
-    def _lookup(
-        self, term: str, domain: str | None
-    ) -> tuple[dict[str, Any], bool]:
+    def _lookup(self, term: str, domain: str | None) -> tuple[dict[str, Any], bool]:
         if self._lookup_cache is not None:
             cached = self._lookup_cache.get(term, domain=domain, target_lang=None)
             if cached is not None:

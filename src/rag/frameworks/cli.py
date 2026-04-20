@@ -23,7 +23,9 @@ def main(argv: list[str] | None = None) -> int:
         prog="translate",
         description="Translate a file into one or more target languages using the RAG pipeline.",
     )
-    parser.add_argument("path", type=Path, help="Source file (.txt, .md, .docx, .srt, .xlsx)")
+    parser.add_argument(
+        "path", type=Path, help="Source file (.txt, .md, .docx, .srt, .xlsx)"
+    )
     parser.add_argument(
         "--to",
         required=True,
@@ -36,6 +38,27 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Walk the graph without calling any LLM; exercises I/O only",
     )
+    parser.add_argument(
+        "--roundtrip",
+        action="store_true",
+        help="Add a back-translation QA leg; records per-chunk similarity",
+    )
+    simple_group = parser.add_mutually_exclusive_group()
+    simple_group.add_argument(
+        "--simple",
+        dest="simple_mode",
+        action="store_const",
+        const=True,
+        help="Force the simple (translate-only) pipeline, skipping RAG nodes",
+    )
+    simple_group.add_argument(
+        "--no-simple",
+        dest="simple_mode",
+        action="store_const",
+        const=False,
+        help="Force the full RAG pipeline even for tiny inputs",
+    )
+    parser.set_defaults(simple_mode=None)
     args = parser.parse_args(argv)
 
     if not args.path.exists():
@@ -53,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
         kb_vault=Path(os.environ.get("KB_VAULT", "./vault")),
         kb_store=Path(os.environ.get("KB_STORE_PATH", "./.kb")),
         dry_run=args.dry_run,
+        simple_mode=args.simple_mode,
+        roundtrip=args.roundtrip,
     )
     report = run_translate(config)
     for lang, path in report.outputs.items():

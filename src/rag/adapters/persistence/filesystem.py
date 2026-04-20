@@ -1,14 +1,11 @@
 """Filesystem-backed ``RunRepository`` — writes under ``.translate-runs/<run-id>/``."""
 
 from __future__ import annotations
-
 import json
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
-
 from dataclasses import asdict
-
 from ...domain import AnalysisResult, GlossaryEntry, RunPaths, TranslatedUnit, Unit
 from ...use_cases.ports import RunRepository
 
@@ -104,6 +101,40 @@ class FilesystemRunRepository(RunRepository):
         reports: Iterable[Mapping[str, Any]],
     ) -> None:
         target_file = paths.repair(target_lang)
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "target_lang": target_lang,
+            "chunks": [dict(r) for r in reports],
+        }
+        target_file.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def write_review(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        target_file = paths.review(target_lang)
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "target_lang": target_lang,
+            "chunks": [dict(r) for r in reports],
+        }
+        target_file.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def write_roundtrip(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        target_file = paths.roundtrip(target_lang)
         target_file.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "target_lang": target_lang,

@@ -5,9 +5,7 @@ declared in ``pyproject.toml`` under the ``rag`` extras.
 """
 
 from __future__ import annotations
-
 from collections.abc import Sequence
-
 from ...use_cases.ports import LLMClient, LLMMessage
 
 

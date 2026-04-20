@@ -6,10 +6,8 @@ database name come from env (``RAG_MONGO_URI`` / ``RAG_MONGO_DB``) per
 """
 
 from __future__ import annotations
-
 from collections.abc import Iterable, Mapping
 from typing import Any
-
 from ...domain import AnalysisResult, GlossaryEntry, RunPaths, TranslatedUnit, Unit
 from ...use_cases.ports import RunRepository
 

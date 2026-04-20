@@ -1,32 +1,27 @@
-"""MetricProfile + CustomCheck ports.
+"""MetricProfile + CustomCheck ports (Rev 3).
 
-A metric profile bundles the per-language scoring weights, cycle-check mode,
-optional external metrics, and custom pass/fail gates. Loaded from the
-language card in the vault (see ``PLAN-rag-pipeline.md`` §4).
+A metric profile bundles per-language scoring weights, repair settings, and
+the set of custom pass/fail gates a language needs. Loaded from the
+language card in the vault (see ``PLAN-rag-pipeline.md`` §4). The Rev 3
+reviewer makes zero LLM calls — it combines a rule-based checklist,
+embedding cosine vs retrieved examples, and named custom checks.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import Any, Literal
-
-
-type CycleCheckMode = Literal["scalpel_only", "primary", "off"]
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(slots=True, frozen=True)
 class MetricWeights:
-    ground: float
-    example: float
+    """Composite score weights. Should sum to 1.0."""
+
     checklist: float
-
-
-@dataclass(slots=True, frozen=True)
-class ExternalMetric:
-    name: str
-    weight: float
+    similarity: float
+    custom: float
 
 
 @dataclass(slots=True, frozen=True)
@@ -36,16 +31,14 @@ class CustomCheckResult:
     detail: str | None = None
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class MetricProfile:
     """Per-language scoring config. Immutable after load."""
 
     lang: str
     weights: MetricWeights
-    cycle_check_mode: CycleCheckMode
-    cycle_check_threshold: float
-    external_metrics: list[ExternalMetric]
-    custom_check_names: list[str]
+    repair_max_passes: int = 1
+    custom_check_names: list[str] = field(default_factory=list)
 
 
 class CustomCheck(ABC):
@@ -73,3 +66,11 @@ class CustomCheckRegistry(ABC):
     @abstractmethod
     def resolve(self, names: Sequence[str]) -> list[CustomCheck]:
         """Batch lookup; preserves order."""
+
+
+class MetricProfileRegistry(ABC):
+    """Resolve a language tag to its :class:`MetricProfile`."""
+
+    @abstractmethod
+    def get(self, lang: str) -> MetricProfile:
+        """Return the profile for ``lang``; falls back to a default."""

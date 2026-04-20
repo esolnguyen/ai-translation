@@ -6,12 +6,14 @@ Uses the ``google-genai`` SDK. System messages are folded into the
 """
 
 from __future__ import annotations
-
 import os
 from collections.abc import Sequence
 from dataclasses import dataclass
-
+from typing import TYPE_CHECKING, cast
 from ...use_cases.ports import LLMClient, LLMMessage
+
+if TYPE_CHECKING:
+    from google.genai.types import ContentListUnionDict
 
 _ROLE_MAP = {"user": "user", "assistant": "model"}
 
@@ -57,8 +59,11 @@ class GeminiClient(LLMClient):
         from google.genai import types
 
         system_parts = [m.content for m in messages if m.role == "system"]
-        contents = [
-            {"role": _ROLE_MAP[m.role], "parts": [{"text": m.content}]}
+        contents: list[types.Content] = [
+            types.Content(
+                role=_ROLE_MAP[m.role],
+                parts=[types.Part.from_text(text=m.content)],
+            )
             for m in messages
             if m.role in _ROLE_MAP
         ]
@@ -69,7 +74,7 @@ class GeminiClient(LLMClient):
         )
         response = self._client.models.generate_content(
             model=self._config.model,
-            contents=contents,
+            contents=cast("ContentListUnionDict", contents),
             config=config,
         )
         return response.text or ""

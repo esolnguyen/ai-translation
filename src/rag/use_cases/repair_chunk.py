@@ -12,9 +12,7 @@ repair actions, not a separate node.
 """
 
 from __future__ import annotations
-
 from dataclasses import asdict, dataclass, field
-
 from ..domain import AnalysisResult, GlossaryEntry, TranslatedUnit, TranslationFlag
 from .ports import LLMClient, LLMMessage
 
@@ -23,6 +21,13 @@ _REPAIR_SYSTEM = (
     "translated sentence, highlight one flagged span, and explain why it "
     "was flagged. Return ONLY the corrected text that should replace the "
     "flagged span — no tags, no quotes, no prose."
+)
+
+_WHOLE_REPAIR_SYSTEM = (
+    "You are a translation repair specialist. The user will show you a "
+    "draft translation and a list of reviewer failures it must address. "
+    "Return ONLY the corrected full translation — no tags, no quotes, no "
+    "commentary."
 )
 
 
@@ -77,10 +82,32 @@ class RepairChunk:
             return RepairOutput(translated=translated, report=report)
 
         new_text = translated.target_text
-        # Apply replacements in reverse offset order so earlier offsets stay valid.
-        for flag in sorted(flags, key=lambda f: f.start, reverse=True):
-            replacement = self._rewrite_span(
-                flag=flag,
+        if flags:
+            # Apply replacements in reverse offset order so earlier offsets stay valid.
+            for flag in sorted(flags, key=lambda f: f.start, reverse=True):
+                replacement = self._rewrite_span(
+                    flag=flag,
+                    draft=new_text,
+                    source_text=source_text,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    analysis=analysis,
+                    glossary=glossary or [],
+                    failures=failures,
+                )
+                if replacement is None:
+                    continue
+                new_text = new_text[: flag.start] + replacement + new_text[flag.end :]
+                report.actions.append(
+                    RepairAction(
+                        flag_kind=flag.kind.value,
+                        original=flag.text,
+                        replacement=replacement,
+                        reason=flag.reason,
+                    )
+                )
+        elif failures:
+            rewritten = self._rewrite_whole(
                 draft=new_text,
                 source_text=source_text,
                 source_lang=source_lang,
@@ -89,17 +116,16 @@ class RepairChunk:
                 glossary=glossary or [],
                 failures=failures,
             )
-            if replacement is None:
-                continue
-            new_text = new_text[: flag.start] + replacement + new_text[flag.end :]
-            report.actions.append(
-                RepairAction(
-                    flag_kind=flag.kind.value,
-                    original=flag.text,
-                    replacement=replacement,
-                    reason=flag.reason,
+            if rewritten is not None and rewritten != new_text:
+                report.actions.append(
+                    RepairAction(
+                        flag_kind="failure",
+                        original=new_text,
+                        replacement=rewritten,
+                        reason=",".join(failures),
+                    )
                 )
-            )
+                new_text = rewritten
 
         repaired = TranslatedUnit(
             id=translated.id,
@@ -146,6 +172,37 @@ class RepairChunk:
         )
         replacement = response.strip()
         return replacement or None
+
+    def _rewrite_whole(
+        self,
+        *,
+        draft: str,
+        source_text: str,
+        source_lang: str,
+        target_lang: str,
+        analysis: AnalysisResult | None,
+        glossary: list[GlossaryEntry],
+        failures: list[str],
+    ) -> str | None:
+        parts = [
+            f"Draft ({target_lang}): {draft}",
+            f"Source ({source_lang}): {source_text}",
+            "Reviewer failures:\n" + "\n".join(f"- {f}" for f in failures),
+        ]
+        if analysis is not None and analysis.domain:
+            parts.append(f"Domain: {analysis.domain}")
+        if glossary:
+            lines = "\n".join(f"- {g.source} → {g.target}" for g in glossary)
+            parts.append(f"Glossary:\n{lines}")
+        response = self._llm.complete(
+            [
+                LLMMessage(role="system", content=_WHOLE_REPAIR_SYSTEM),
+                LLMMessage(role="user", content="\n\n".join(parts)),
+            ],
+            temperature=0.0,
+        )
+        rewritten = response.strip()
+        return rewritten or None
 
 
 def report_to_dict(report: RepairReport) -> dict:
