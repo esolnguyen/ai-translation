@@ -100,7 +100,7 @@ Key cost properties:
 | M2.1 | Trim Analyzer output | Strip `tone`/`register`/`audience` from `AnalysisResult`; simplify prompt | Analyzer prompt + domain class match the Rev 3 schema | ✅ done |
 | M2.5 | KB lookup cache | Cross-run persistent cache keyed by `(term, domain, target_lang)`; ResolveTerms + Glossary read/write it | Second run on same doc shows >0 cache hits in manifest | ✅ done |
 | M3 | Per-lang Glossary builder | Read term cache → `retriever.glossary(term, target_lang)` → dedupe → `glossary.<lang>.json` | Each branch has a non-empty glossary when KB has entries | ✅ done |
-| M4 | Translator (single-pass, self-flag) + Repair (unified) | Prompt emits `<unsure>`/`<sense>` spans; Repair takes `flags + failures` and rewrites only relevant spans; escalation writes verbatim | Clean chunks show empty `repair.json`; escalations noted in manifest | — |
+| M4 | Translator (single-pass, self-flag) + Repair (unified) | Prompt emits `<unsure>`/`<sense>` spans; Repair takes `flags + failures` and rewrites only relevant spans; escalation writes verbatim | Clean chunks show empty `repair.json`; escalations noted in manifest | ✅ done |
 | M5 | Reviewer (pure code) | Rule-based checklist + embedding cosine vs examples + custom checks; retries loop to Repair with failures | `acadia-50-sentences.en.md → .vi.md` green end-to-end | — |
 | M5.5 | Metric profiles | Per-language weights + custom-check registry; loaded from `vault/languages/<lang>.md` | `adapters/metrics/registry.py` dispatches per-lang; de/pl profiles exercised by tests | — |
 | M6 | Adapters | `md`, `docx`, `srt`, `xlsx` filled in following `txt.py` reference | Each adapter round-trips its fixture without data loss | — |

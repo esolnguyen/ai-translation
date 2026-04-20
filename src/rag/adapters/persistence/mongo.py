@@ -55,6 +55,14 @@ class MongoRunRepository(RunRepository):
     ) -> None:
         raise NotImplementedError
 
+    def write_repair(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        raise NotImplementedError
+
     def finalize_manifest(
         self,
         paths: RunPaths,

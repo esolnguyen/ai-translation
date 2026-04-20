@@ -97,6 +97,23 @@ class FilesystemRunRepository(RunRepository):
                 )
                 fh.write("\n")
 
+    def write_repair(
+        self,
+        paths: RunPaths,
+        target_lang: str,
+        reports: Iterable[Mapping[str, Any]],
+    ) -> None:
+        target_file = paths.repair(target_lang)
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "target_lang": target_lang,
+            "chunks": [dict(r) for r in reports],
+        }
+        target_file.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
     def finalize_manifest(
         self,
         paths: RunPaths,

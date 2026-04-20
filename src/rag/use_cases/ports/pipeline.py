@@ -20,6 +20,7 @@ from ...domain import (
     RunConfig,
     RunPaths,
     TranslatedUnit,
+    TranslationFlag,
     Unit,
 )
 from .llm import LLMClient
@@ -35,6 +36,9 @@ class LangBranchState:
     target_lang: str
     glossary: list[GlossaryEntry] = field(default_factory=list)
     translations: dict[str, TranslatedUnit] = field(default_factory=dict)
+    flags_by_unit: dict[str, list[TranslationFlag]] = field(default_factory=dict)
+    failures_by_unit: dict[str, list[str]] = field(default_factory=dict)
+    repair_passes: dict[str, int] = field(default_factory=dict)
     chunks_total: int = 0
     chunks_passed: int = 0
     chunks_retried: int = 0
