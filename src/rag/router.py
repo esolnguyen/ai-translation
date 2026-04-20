@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .adapters.documents import make_document_adapter
 from .adapters.llm import make_llm_client
-from .adapters.persistence import make_run_repository
+from .adapters.persistence import make_run_repository, make_term_cache
 from .adapters.pipeline import make_pipeline_runner
 from .adapters.retrieval import make_retriever
 from .domain import RunConfig
@@ -23,6 +23,7 @@ def translate(config: RunConfig) -> TranslateReport:
         llm=make_llm_client(),
         retriever=make_retriever(config.kb_store),
         repository=repository,
+        term_cache=make_term_cache(config.kb_store),
     )
     use_case = TranslateDocument(
         document_adapter_factory=make_document_adapter,

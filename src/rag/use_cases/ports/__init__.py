@@ -12,6 +12,7 @@ from .metrics import CustomCheck, CustomCheckResult, MetricProfile
 from .pipeline import LangBranchState, PipelineDependencies, PipelineRunner, RunState
 from .repository import RunRepository
 from .retrieval import KnowledgeRetriever
+from .term_cache import TermLookupCache
 
 __all__ = [
     "CustomCheck",
@@ -26,4 +27,5 @@ __all__ = [
     "PipelineRunner",
     "RunRepository",
     "RunState",
+    "TermLookupCache",
 ]

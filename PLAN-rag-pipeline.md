@@ -97,8 +97,8 @@ Key cost properties:
 |---|------|-------|----------------|--------|
 | M1 | Graph foundation | `RunState` channel, `Graph` + `SimplePipelineRunner`, dry-run harness | `translate foo.txt --to vi --dry-run` walks every node | ✅ done |
 | M2 | Analyzer + ResolveTerms | Domain + `candidate_terms` + `summary`; heuristic + LLM candidates; KB entity+search lookup | `analysis.json` written; term-cache hit-rate logged | ✅ done |
-| M2.1 | Trim Analyzer output | Strip `tone`/`register`/`audience` from `AnalysisResult`; simplify prompt | Analyzer prompt + domain class match the Rev 3 schema | — |
-| M2.5 | KB lookup cache | Cross-run persistent cache keyed by `(term, domain, target_lang)`; ResolveTerms + Glossary read/write it | Second run on same doc shows >0 cache hits in manifest | — |
+| M2.1 | Trim Analyzer output | Strip `tone`/`register`/`audience` from `AnalysisResult`; simplify prompt | Analyzer prompt + domain class match the Rev 3 schema | ✅ done |
+| M2.5 | KB lookup cache | Cross-run persistent cache keyed by `(term, domain, target_lang)`; ResolveTerms + Glossary read/write it | Second run on same doc shows >0 cache hits in manifest | ✅ done |
 | M3 | Per-lang Glossary builder | Read term cache → `retriever.glossary(term, target_lang)` → dedupe → `glossary.<lang>.json` | Each branch has a non-empty glossary when KB has entries | — |
 | M4 | Translator (single-pass, self-flag) + Repair (unified) | Prompt emits `<unsure>`/`<sense>` spans; Repair takes `flags + failures` and rewrites only relevant spans; escalation writes verbatim | Clean chunks show empty `repair.json`; escalations noted in manifest | — |
 | M5 | Reviewer (pure code) | Rule-based checklist + embedding cosine vs examples + custom checks; retries loop to Repair with failures | `acadia-50-sentences.en.md → .vi.md` green end-to-end | — |
