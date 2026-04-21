@@ -81,14 +81,6 @@ class _EmptyRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return None
 
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        return None
-
 
 def _prepare_state(tmp_path: Path, units: list[Unit]) -> tuple[RunState, Path]:
     source_path = tmp_path / "src.txt"

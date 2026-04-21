@@ -19,8 +19,6 @@ from .languages import LanguageStore
 from .store import QueryHit, Store
 from .stores import ChromaStore
 
-_IDIOM_SCORE_THRESHOLD = 0.5
-
 
 def _hit_to_dict(hit: QueryHit) -> dict[str, Any]:
     return {
@@ -116,16 +114,3 @@ class Retriever:
 
     def entity(self, name: str) -> dict[str, Any] | None:
         return self._entities.get(name)
-
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        vector = self._embedder.embed([phrase])[0]
-        where = {"$and": [{"source_lang": source_lang}, {"target_lang": target_lang}]}
-        hits = self._store.query("idioms", vector, k=1, where=where)
-        if not hits or hits[0].score < _IDIOM_SCORE_THRESHOLD:
-            return None
-        return _hit_to_dict(hits[0])

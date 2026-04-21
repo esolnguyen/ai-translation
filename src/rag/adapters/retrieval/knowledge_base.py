@@ -54,14 +54,6 @@ class KnowledgeBaseRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return self._inner.entity(name)
 
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        return self._inner.idiom(phrase, source_lang=source_lang, target_lang=target_lang)
-
 
 def make_retriever(kb_store: Path | None = None) -> KnowledgeRetriever:
     """Build a retriever using env defaults.

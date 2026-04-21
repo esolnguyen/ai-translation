@@ -49,14 +49,6 @@ class _ScriptedRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return self._entities.get(name)
 
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        return None
-
 
 def test_glossary_hit_produces_entry_with_body_parse() -> None:
     retriever = _ScriptedRetriever(

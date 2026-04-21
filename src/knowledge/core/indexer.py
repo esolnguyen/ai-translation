@@ -24,7 +24,6 @@ from .sync import SyncDelta, SyncReport
 _VECTOR_COLLECTIONS: dict[NoteKind, str] = {
     NoteKind.DOMAIN: "notes",
     NoteKind.EXAMPLE: "examples",
-    NoteKind.IDIOM: "idioms",
 }
 
 
@@ -40,7 +39,7 @@ def _chunk_metadata(note: Note, chunk_: Chunk) -> dict[str, Any]:
         meta["domain"] = note.domain
     if note.tags:
         meta["tags"] = note.tags
-    # Example + idiom notes carry language pair + extra section content.
+    # Example notes carry language pair + extra section content.
     for key in ("source_lang", "target_lang"):
         value = note.frontmatter.get(key)
         if value is not None:

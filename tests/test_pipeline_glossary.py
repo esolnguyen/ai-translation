@@ -50,14 +50,6 @@ class _ScriptedRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return None
 
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        return None
-
 
 def test_glossary_node_fanout_writes_per_lang_files(tmp_path: Path) -> None:
     units = [

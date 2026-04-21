@@ -89,17 +89,3 @@ def test_examples_returns_matching_pair(tmp_path: Path):
     assert hits[0]["metadata"]["source_lang"] == "en"
 
 
-def test_idiom_lookup_returns_match(tmp_path: Path):
-    retriever = _seeded(tmp_path)
-    entry = retriever.idiom("kick the bucket", source_lang="en", target_lang="vi")
-    assert entry is not None
-    assert entry["metadata"]["note_id"] == "idiom-en-vi-kick-the-bucket"
-
-
-def test_idiom_below_threshold_returns_none(tmp_path: Path):
-    retriever = _seeded(tmp_path)
-    # Entirely unrelated phrase should score below the similarity threshold.
-    assert (
-        retriever.idiom("unrelated random gibberish xyz", source_lang="en", target_lang="vi")
-        is None
-    )

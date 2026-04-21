@@ -61,14 +61,6 @@ class _NoExamplesRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return None
 
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        return None
-
 
 def _unit() -> Unit:
     return Unit(

@@ -1,7 +1,7 @@
 """Vector store protocol + shared record types.
 
 The Store protocol is deliberately narrow: upsert, delete, query. Collections
-(notes / examples / idioms) are plain string names; the indexer decides which
+(notes / examples) are plain string names; the indexer decides which
 collection a chunk lands in.
 
 Backends (Chroma, LanceDB, Qdrant) live under knowledge.core.stores.

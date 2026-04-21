@@ -43,12 +43,3 @@ class KnowledgeRetriever(ABC):
     @abstractmethod
     def entity(self, name: str) -> dict[str, Any] | None:
         """Entity note for ``name``, if any."""
-
-    @abstractmethod
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        """Top idiom match above the configured score threshold."""

@@ -20,7 +20,6 @@ def test_walk_routes_every_kind():
     assert NoteKind.GLOSSARY in by_kind
     assert NoteKind.LANGUAGE in by_kind
     assert NoteKind.ENTITY in by_kind
-    assert NoteKind.IDIOM in by_kind
 
 
 def test_walk_includes_needs_review_notes():
