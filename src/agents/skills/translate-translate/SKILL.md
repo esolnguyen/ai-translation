@@ -17,7 +17,7 @@ The core translation skill. Re-entered per chunk/batch, never as one rolling con
 - `run_dir`, `target_lang`
 - `analysis_path` — `<run_dir>/analysis.json` (domain prime — injected **verbatim**)
 - `glossary_path` — `<run_dir>/glossary.<target_lang>.json`
-- `style_card` — from `kb lang-card <target_lang>` (fetched by orchestrator, passed as JSON string)
+- `style_card` — from `translate kb lang-card <target_lang>` (fetched by orchestrator, passed as JSON string)
 - `chunk` — `{id, prev_text, current_text, next_text}` (neighbor-context chunking, DESIGN-agent.md §Accuracy #4)
 - `pass` — `fast` | `1` | `2`
 
@@ -31,7 +31,7 @@ Pass-2-only:
 Injected in order, each section labeled:
 
 1. `## Domain prime` — full contents of `analysis.json`, verbatim.
-2. `## Style card` — full `kb lang-card` JSON.
+2. `## Style card` — full `translate kb lang-card` JSON.
 3. `## Glossary (authoritative)` — `glossary.<target_lang>.json` entries; translator must use these exact target-language forms and is forbidden from choosing alternatives.
 4. `## Neighbor context` — prev + next chunk. **Do not translate.** Only the current chunk is translated.
 5. `## Task` — pass-specific (below).

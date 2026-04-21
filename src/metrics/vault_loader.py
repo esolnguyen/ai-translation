@@ -14,7 +14,7 @@ from typing import Any
 
 import yaml
 
-from ...use_cases.ports import (
+from .ports import (
     MetricProfile,
     MetricProfileRegistry,
     MetricWeights,

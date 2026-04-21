@@ -18,5 +18,5 @@ SORT domain ASC, file.name ASC
 Seed new pairs with:
 
 ```
-kb examples add <source-file> <target-file> --src en --tgt ja --domain legal
+translate kb examples add <source-file> <target-file> --src en --tgt ja --domain legal
 ```

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from rag.adapters.metrics.checks import (
+from metrics.checks import (
     ChunkContext,
     GlossaryAdherenceCheck,
     LengthSanityCheck,

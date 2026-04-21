@@ -6,7 +6,7 @@ default profile until M5.5 loads per-language cards from ``vault/languages``.
 
 from __future__ import annotations
 
-from ...use_cases.ports import MetricProfile, MetricProfileRegistry, MetricWeights
+from .ports import MetricProfile, MetricProfileRegistry, MetricWeights
 
 _DEFAULT_CHECKS: list[str] = [
     "glossary_adherence",

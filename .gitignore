@@ -25,7 +25,7 @@ vault/**/*.md
 # Source documents fed into the extractor (PDFs, DOCX, HTML). Not tracked.
 sources/
 
-# KB backing stores (derived from vault — rebuildable via `kb index`)
+# KB backing stores (derived from vault — rebuildable via `translate kb index`)
 .kb/
 
 # Translation run scratchpads

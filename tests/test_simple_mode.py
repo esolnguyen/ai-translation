@@ -3,8 +3,8 @@
 Three scenarios:
 
 - ``build_simple_graph`` runs only a translate node; no analysis/glossary/
-  review/repair events are recorded; LLM is called exactly once per unit
-  per target language.
+  review/repair events are recorded; units are batched into one LLM call
+  per target language (subject to ``TranslateChunk.batch_size``).
 - ``TranslateDocument`` picks the simple runner when auto-selection fires,
   the full runner when ``--no-simple`` is explicit, and obeys ``--simple``
   even on a many-word input.
@@ -15,6 +15,7 @@ Three scenarios:
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
@@ -44,8 +45,16 @@ from rag.use_cases.ports import (
 from rag.use_cases.translate_document import TranslateDocument
 
 
+_SRC_ID_RE = re.compile(r'<<<SRC\s+id="([^"]+)">>>')
+
+
 class _CountingLLM(LLMClient):
-    """Records every call's system role so we can assert which nodes fired."""
+    """Records every call's system role so we can assert which nodes fired.
+
+    If the user message contains batched ``<<<SRC id="…">>>`` blocks, echoes
+    the configured response back inside matching ``<<<TGT id="…">>>`` blocks
+    so the batch parser can split them without falling back to singletons.
+    """
 
     def __init__(self, response: str = "translated") -> None:
         self._response = response
@@ -60,6 +69,12 @@ class _CountingLLM(LLMClient):
     ) -> str:
         system = next((m.content for m in messages if m.role == "system"), "")
         self.calls.append(system)
+        user = next((m.content for m in messages if m.role == "user"), "")
+        ids = _SRC_ID_RE.findall(user)
+        if ids:
+            return "\n".join(
+                f'<<<TGT id="{uid}">>>\n{self._response}' for uid in ids
+            )
         return self._response
 
 
@@ -154,7 +169,7 @@ def test_simple_graph_emits_only_translate_events(tmp_path: Path) -> None:
     assert vi.chunks_passed == 1
 
 
-def test_simple_graph_calls_translate_once_per_lang_per_unit(
+def test_simple_graph_batches_units_into_one_call_per_lang(
     tmp_path: Path,
 ) -> None:
     units = [
@@ -165,9 +180,11 @@ def test_simple_graph_calls_translate_once_per_lang_per_unit(
     deps = _make_deps(tmp_path, llm)
     state = _prepare_state(tmp_path, units, ["vi", "fr"])
 
-    SimplePipelineRunner(build_simple_graph(deps)).run(state)
+    final = SimplePipelineRunner(build_simple_graph(deps)).run(state)
 
-    assert len(llm.calls) == 2 * 2
+    assert len(llm.calls) == 2
+    assert final.branches["vi"].translations["u1"].target_text == "ok"
+    assert final.branches["fr"].translations["u2"].target_text == "ok"
 
 
 def test_translate_document_picks_simple_runner_for_tiny_input(

@@ -13,6 +13,7 @@ from ...use_cases.ports import LLMClient, LLMMessage
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
+    from openai.types.responses import ResponseInputParam
 
 
 @dataclass(slots=True, frozen=True)
@@ -69,6 +70,19 @@ class AzureOpenAIClient(LLMClient):
         temperature: float = 0.0,
         max_tokens: int | None = None,
     ) -> str:
+        if self._is_reasoning_model(self._config.deployment):
+            return self._complete_responses(messages, max_tokens=max_tokens)
+        return self._complete_chat(
+            messages, temperature=temperature, max_tokens=max_tokens
+        )
+
+    def _complete_chat(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        temperature: float,
+        max_tokens: int | None,
+    ) -> str:
         payload = cast(
             "list[ChatCompletionMessageParam]",
             [{"role": m.role, "content": m.content} for m in messages],
@@ -80,3 +94,24 @@ class AzureOpenAIClient(LLMClient):
             max_tokens=max_tokens,
         )
         return response.choices[0].message.content or ""
+
+    def _complete_responses(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        max_tokens: int | None,
+    ) -> str:
+        payload = cast(
+            "ResponseInputParam",
+            [{"role": m.role, "content": m.content} for m in messages],
+        )
+        kwargs: dict = {"model": self._config.deployment, "input": payload}
+        if max_tokens is not None:
+            kwargs["max_output_tokens"] = max_tokens
+        response = self._client.responses.create(**kwargs)
+        return getattr(response, "output_text", "") or ""
+
+    @staticmethod
+    def _is_reasoning_model(deployment: str) -> bool:
+        name = deployment.lower()
+        return name.startswith(("gpt-5", "o1", "o3", "o4"))

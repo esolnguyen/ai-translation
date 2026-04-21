@@ -1,6 +1,6 @@
 ---
 name: translate-glossary
-description: Builds the run's merged glossary. Calls `kb glossary`, `kb entity`, and `kb idiom` for every candidate term in the source, merges with the resolved-terms scratch file, and writes one authoritative glossary per target language to the run scratchpad.
+description: Builds the run's merged glossary. Calls `translate kb glossary`, `translate kb entity`, and `translate kb idiom` for every candidate term in the source, merges with the resolved-terms scratch file, and writes one authoritative glossary per target language to the run scratchpad.
 tools: Bash, Read, Write
 ---
 
@@ -25,14 +25,14 @@ Runs **once per run, per target language**, after `translate-resolve-terms` (Ful
     - Common idiom patterns (verb-noun collocations, fixed expressions) → candidate idioms.
     - Dedupe and keep the first occurrence position for context.
 2. **KB lookups (batched where possible):**
-    - `kb glossary "<term>" --target <target_lang>` per candidate term.
-    - `kb entity "<name>"` per candidate entity.
-    - `kb idiom "<phrase>" --src <source_lang> --tgt <target_lang>` per candidate idiom.
+    - `translate kb glossary "<term>" --target <target_lang>` per candidate term.
+    - `translate kb entity "<name>"` per candidate entity.
+    - `translate kb idiom "<phrase>" --src <source_lang> --tgt <target_lang>` per candidate idiom.
 3. **Merge precedence** (highest to lowest):
     1. `resolved-terms.<target_lang>.json` — document-level polysemy picks are authoritative.
-    2. `kb entity` — brand/proper-noun decisions.
-    3. `kb glossary` — canonical term translations.
-    4. `kb idiom` — idiom renderings.
+    2. `translate kb entity` — brand/proper-noun decisions.
+    3. `translate kb glossary` — canonical term translations.
+    4. `translate kb idiom` — idiom renderings.
     - On conflict (same source term), higher precedence wins; log the loser in `conflicts`.
 4. **Unknowns.** Any candidate that returned nothing from all three KB calls goes into `unknown_terms` with its first-occurrence context. The orchestrator surfaces these to the user — do **not** invent a translation here.
 
@@ -63,6 +63,6 @@ Emit to stdout.
 
 ## Do not
 
-- Write to the vault. New entries are surfaced via `unknown_terms` for the user to approve; they go in via `kb glossary add` / `kb entity add` — not this skill.
+- Write to the vault. New entries are surfaced via `unknown_terms` for the user to approve; they go in via `translate kb glossary add` / `translate kb entity add` — not this skill.
 - Do per-chunk lookups later. This glossary is frozen for the run once emitted.
 - Translate prose. Term-level only.

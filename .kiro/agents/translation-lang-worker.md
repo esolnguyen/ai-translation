@@ -1,0 +1,1 @@
+/home/tnguyen/source/personal/ai-translation/src/agents/translation-lang-worker.md
