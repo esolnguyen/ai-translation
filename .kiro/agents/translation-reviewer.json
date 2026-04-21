@@ -1,9 +1,0 @@
-{
-  "name": "translation-reviewer",
-  "description": "Checklist-based translation review subagent. Produces composite score (ground + example + checklist) and a structured YAML report. Runs isolated so it hasn't witnessed the translator's reasoning.",
-  "prompt": "file://./translation-reviewer.md",
-  "resources": [],
-  "tools": [
-    "*"
-  ]
-}
