@@ -24,7 +24,7 @@ Supported source formats: `.txt`, `.md`, `.docx`, `.srt`, `.xlsx`. **PDF is reje
 
 ## Procedure
 
-1. **Validate input.** Extension ∈ {txt, md, docx, srt, xlsx}. Reject PDF with a pointer to `kb extract`. Parse `--to` into a list of BCP-47 language codes.
+1. **Validate input.** Extension ∈ {txt, md, docx, srt, xlsx}. Reject PDF with a pointer to `translate kb extract`. Parse `--to` into a list of BCP-47 language codes.
 2. **Run directory.** If `--resume` and `--run-id` given, reuse. Else create `.translate-runs/<run-id>/` (run-id = `<timestamp>-<basename>-<rand6>`). Write `manifest.json`: `{source_path, source_lang, target_langs, format, path, started_at, status: "running"}`.
 3. **Format extraction.** Invoke the matching format skill (`translate-md`, `translate-docx`, `translate-srt`, `translate-xlsx`, `translate-txt`) with `{mode: extract, source_path, run_dir}`. It writes `<run_dir>/units.jsonl`.
 4. **Path selection (auto, unless `--fast` / `--full` overrides).** After extraction, count `N = len(units.jsonl)`. Pick **Fast** if *all* hold:
@@ -36,7 +36,7 @@ Supported source formats: `.txt`, `.md`, `.docx`, `.srt`, `.xlsx`. **PDF is reje
 5. **Document-level state (once per run, shared across all target languages).**
     - `translate-analyze` → `<run_dir>/analysis.json` (domain, sub-domain, tone, register, retrieved note ids). *Always runs — cheap, single call.*
     - `translate-resolve-terms` → `<run_dir>/resolved-terms.<lang>.json`. **Full path only.** Fast path folds polysemy locks into the glossary step via a tighter prompt.
-    - `translate-glossary` → `<run_dir>/glossary.<lang>.json` (merges `kb glossary` + `kb entity` + `kb idiom` + resolved terms on full path; Fast path skips the resolve merge and lets the translator lock terms inline during its single pass).
+    - `translate-glossary` → `<run_dir>/glossary.<lang>.json` (merges `translate kb glossary` + `translate kb entity` + `translate kb idiom` + resolved terms on full path; Fast path skips the resolve merge and lets the translator lock terms inline during its single pass).
 6. **Dispatch by path:**
     - **Fast path (≤100 units, single target, text-like format):** invoke `translate-translate` once per chunk with `--pass fast` — a single-pass translation that inlines the glossary and style card, flags nothing, and writes straight to `<run_dir>/<lang>/chunks/<id>.md`. No cycle-check, no reviewer, no edit. Rationale: for short documents cross-chunk drift is bounded; the full chain's consistency guarantees don't earn their latency.
     - **Full path / Flow A (single target, text-like format, >100 units):** run the chain inline in the main thread — `translate-translate` pass 1 → `translate-cycle-check` → `translate-translate` pass 2 → `translation-reviewer` subagent → `translate-edit`, chunk by chunk.

@@ -30,7 +30,7 @@ ai-translation/
 │   ├── entities/<name>.md
 │   └── idioms/<src>-<tgt>/<id>.md
 │
-└── .kb/                           derived stores — gitignored, rebuild via `kb index`
+└── .kb/                           derived stores — gitignored, rebuild via `translate kb index`
     ├── chroma/                    vector DB
     ├── glossary.json
     ├── entities.json
@@ -43,8 +43,8 @@ templates, `.gitkeep`, `.obsidian/`) are tracked.
 
 ## Building knowledge from a PDF
 
-The automated `kb extract <pdf>` command is on the roadmap but not built
-yet. Until it lands, the workflow is Claude-assisted-manual.
+The automated `translate kb extract <pdf>` command is on the roadmap but not
+built yet. Until it lands, the workflow is Claude-assisted-manual.
 
 ### 1. Drop the source document
 
@@ -84,7 +84,7 @@ status: approved
 ```bash
 export KB_VAULT=./vault
 export KB_STORE_PATH=./.kb
-kb index
+translate kb index
 ```
 
 Prints a sync report (added / updated / removed per collection). Re-run
@@ -93,12 +93,12 @@ any time. Differential sync purges chunks for demoted or deleted notes.
 ### 5. Query the retrieval API
 
 ```bash
-kb search "contract termination" --domain legal --k 5
-kb examples query @sources/chunk.txt --src en --tgt ja --domain legal --k 3
-kb glossary settlement --target ja
-kb lang-card ja
-kb entity Apple
-kb idiom "kick the bucket" --src en --tgt vi
+translate kb search "contract termination" --domain legal --k 5
+translate kb examples query @sources/chunk.txt --src en --tgt ja --domain legal --k 3
+translate kb glossary settlement --target ja
+translate kb lang-card ja
+translate kb entity Apple
+translate kb idiom "kick the bucket" --src en --tgt vi
 ```
 
 Every command returns JSON so the translation paths can parse it without
@@ -109,11 +109,11 @@ adapters.
 Aside from extraction, you can hand-seed a source → target pair:
 
 ```bash
-kb examples add src.txt tgt.txt --src en --tgt ja --domain legal
+translate kb examples add src.txt tgt.txt --src en --tgt ja --domain legal
 ```
 
 Writes a `needs-review` note under `vault/examples/en-ja/legal/`. Review
-and approve, then re-run `kb index`.
+and approve, then re-run `translate kb index`.
 
 ## Setup
 

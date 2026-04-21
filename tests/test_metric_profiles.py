@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rag.adapters.metrics import VaultMetricProfileRegistry, default_custom_check_registry
-from rag.adapters.metrics.checks import ChunkContext
-from rag.adapters.metrics.lang_checks import (
+from metrics import VaultMetricProfileRegistry, default_custom_check_registry
+from metrics.checks import ChunkContext
+from metrics.lang_checks import (
     AspectConsistencyCheck,
     ClassifierPresenceCheck,
     CompoundNounIntegrityCheck,

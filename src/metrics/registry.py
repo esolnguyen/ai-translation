@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from ...use_cases.ports import CustomCheck, CustomCheckRegistry
 from .checks import (
     GlossaryAdherenceCheck,
     LengthSanityCheck,
@@ -20,6 +19,7 @@ from .lang_checks import (
     DiacriticPresenceCheck,
     FormalityConsistencyCheck,
 )
+from .ports import CustomCheck, CustomCheckRegistry
 
 
 class InMemoryCustomCheckRegistry(CustomCheckRegistry):

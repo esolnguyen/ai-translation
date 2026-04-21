@@ -1,44 +1,22 @@
-"""Thin ``kb`` CLI — wraps ``knowledge.core`` so the Agent path can shell out.
+"""``translate kb`` — knowledge base operations.
 
-Retrieval subcommands print JSON on stdout. ``kb index`` prints a human
-report by default and JSON when ``--json`` is passed.
+All handlers lazy-import ``knowledge.core`` so that unrelated
+subcommands (``translate metrics …``) do not pay for Chroma + the
+embedding model on startup.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-import os
-import sys
 from pathlib import Path
-from typing import Any
 
-from ..core.indexer import Indexer
-from ..core.retrieval import Retriever
-
-
-def _read_text_argument(raw: str) -> str:
-    """Support ``@file`` for passing file contents as an argument."""
-    if raw.startswith("@"):
-        return Path(raw[1:]).read_text(encoding="utf-8")
-    return raw
-
-
-def _vault_path() -> Path:
-    return Path(os.environ.get("KB_VAULT", "vault"))
-
-
-def _emit_json(payload: Any) -> None:
-    json.dump(payload, sys.stdout, ensure_ascii=False, indent=2)
-    sys.stdout.write("\n")
-
-
-# ---------------------------------------------------------------------------
-# Command handlers
-# ---------------------------------------------------------------------------
+from ._shared import emit_json, read_text_argument, vault_path
 
 
 def cmd_index(args: argparse.Namespace) -> int:
+    from knowledge.core.indexer import Indexer
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
     indexer = Indexer(
         embedder=retriever._embedder,  # noqa: SLF001 — intentional reuse
@@ -47,31 +25,37 @@ def cmd_index(args: argparse.Namespace) -> int:
         entity_store=retriever._entities,  # noqa: SLF001
         language_store=retriever._languages,  # noqa: SLF001
     )
-    report = indexer.sync(_vault_path())
+    report = indexer.sync(vault_path())
     if args.json:
-        _emit_json(report.to_dict())
+        emit_json(report.to_dict())
     else:
         print(report.format())
     return 0
 
 
 def cmd_search(args: argparse.Namespace) -> int:
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
     hits = retriever.search(args.query, domain=args.domain, k=args.k)
-    _emit_json(hits)
+    emit_json(hits)
     return 0
 
 
 def cmd_glossary(args: argparse.Namespace) -> int:
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
     entry = retriever.glossary(args.term, target_lang=args.target)
-    _emit_json(entry)
+    emit_json(entry)
     return 0 if entry is not None else 1
 
 
 def cmd_examples_query(args: argparse.Namespace) -> int:
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
-    source_text = _read_text_argument(args.source)
+    source_text = read_text_argument(args.source)
     hits = retriever.examples(
         source_text=source_text,
         source_lang=args.src,
@@ -79,14 +63,14 @@ def cmd_examples_query(args: argparse.Namespace) -> int:
         domain=args.domain,
         k=args.k,
     )
-    _emit_json(hits)
+    emit_json(hits)
     return 0
 
 
 def cmd_examples_add(args: argparse.Namespace) -> int:
     source_text = Path(args.source_file).read_text(encoding="utf-8").strip()
     target_text = Path(args.target_file).read_text(encoding="utf-8").strip()
-    vault = _vault_path()
+    vault = vault_path()
     example_id = args.id or f"ex-{args.domain}-{Path(args.source_file).stem}"
     dest_dir = vault / "examples" / f"{args.src}-{args.tgt}" / args.domain
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -104,39 +88,39 @@ def cmd_examples_add(args: argparse.Namespace) -> int:
         f"## Notes\n"
     )
     dest.write_text(body, encoding="utf-8")
-    _emit_json({"wrote": str(dest), "id": example_id})
+    emit_json({"wrote": str(dest), "id": example_id})
     return 0
 
 
 def cmd_lang_card(args: argparse.Namespace) -> int:
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
     card = retriever.language_card(args.lang)
-    _emit_json(card)
+    emit_json(card)
     return 0 if card is not None else 1
 
 
 def cmd_entity(args: argparse.Namespace) -> int:
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
     entry = retriever.entity(args.name)
-    _emit_json(entry)
+    emit_json(entry)
     return 0 if entry is not None else 1
 
 
 def cmd_idiom(args: argparse.Namespace) -> int:
+    from knowledge.core.retrieval import Retriever
+
     retriever = Retriever.from_env()
     entry = retriever.idiom(args.phrase, source_lang=args.src, target_lang=args.tgt)
-    _emit_json(entry)
+    emit_json(entry)
     return 0 if entry is not None else 1
 
 
-# ---------------------------------------------------------------------------
-# Parser
-# ---------------------------------------------------------------------------
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="kb", description="Knowledge base CLI")
-    sub = parser.add_subparsers(dest="command", required=True)
+def build_parser(parser: argparse.ArgumentParser) -> None:
+    sub = parser.add_subparsers(dest="kb_command", required=True)
 
     p_index = sub.add_parser("index", help="Sync approved vault notes to stores")
     p_index.add_argument("--json", action="store_true", help="emit JSON report")
@@ -186,15 +170,3 @@ def build_parser() -> argparse.ArgumentParser:
     p_idiom.add_argument("--src", required=True)
     p_idiom.add_argument("--tgt", required=True)
     p_idiom.set_defaults(func=cmd_idiom)
-
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    return args.func(args)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

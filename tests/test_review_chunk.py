@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import math
 
-from rag.adapters.metrics import (
+from metrics import (
     DefaultMetricProfileRegistry,
     default_custom_check_registry,
 )
-from rag.adapters.metrics.checks import (
+from metrics.checks import (
     GlossaryAdherenceCheck,
     LengthSanityCheck,
     MarkdownIntegrityCheck,

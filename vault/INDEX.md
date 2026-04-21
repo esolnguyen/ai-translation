@@ -7,7 +7,7 @@ status: approved
 
 Source of truth for the AI translation knowledge base. The vector DB and
 structured stores under `.kb/` are derived from approved notes in this
-vault via `kb index`.
+vault via `translate kb index`.
 
 ## Review queue
 

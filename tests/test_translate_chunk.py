@@ -157,3 +157,97 @@ def test_analysis_injected_into_user_prompt() -> None:
     user_msg = next(m for m in llm.calls[0] if m.role == "user")
     assert "Domain: finance / retail banking" in user_msg.content
     assert "End-of-quarter" in user_msg.content
+
+
+def _units(ids: list[str]) -> list[Unit]:
+    return [
+        Unit(id=uid, kind=UnitKind.PARAGRAPH, text=f"Source text for {uid}.")
+        for uid in ids
+    ]
+
+
+def test_execute_batch_single_unit_uses_single_prompt() -> None:
+    llm = _EchoLLM(["translation one"])
+    translator = TranslateChunk(llm=llm, retriever=_NoExamplesRetriever())
+
+    outputs = translator.execute_batch(
+        _units(["u1"]),
+        target_lang="vi",
+        source_lang="en",
+        analysis=None,
+        glossary=[],
+    )
+
+    assert len(outputs) == 1
+    assert outputs[0].translated.target_text == "translation one"
+    user_msg = next(m for m in llm.calls[0] if m.role == "user")
+    assert "<<<SRC" not in user_msg.content
+
+
+def test_execute_batch_splits_envelope_output_in_order() -> None:
+    raw = (
+        '<<<TGT id="u2">>>\nbeta translation\n'
+        '<<<TGT id="u1">>>\nalpha translation\n'
+        '<<<TGT id="u3">>>\ngamma translation\n'
+    )
+    llm = _EchoLLM([raw])
+    translator = TranslateChunk(llm=llm, retriever=_NoExamplesRetriever())
+
+    outputs = translator.execute_batch(
+        _units(["u1", "u2", "u3"]),
+        target_lang="vi",
+        source_lang="en",
+        analysis=None,
+        glossary=[],
+    )
+
+    assert [o.translated.id for o in outputs] == ["u1", "u2", "u3"]
+    assert outputs[0].translated.target_text == "alpha translation"
+    assert outputs[1].translated.target_text == "beta translation"
+    assert outputs[2].translated.target_text == "gamma translation"
+    assert len(llm.calls) == 1
+
+
+def test_execute_batch_falls_back_to_singleton_for_missing_ids() -> None:
+    batch_raw = '<<<TGT id="u1">>>\nalpha translation\n'
+    single_raw = "gamma singleton"
+    llm = _EchoLLM([batch_raw, single_raw])
+    translator = TranslateChunk(llm=llm, retriever=_NoExamplesRetriever())
+
+    outputs = translator.execute_batch(
+        _units(["u1", "u3"]),
+        target_lang="vi",
+        source_lang="en",
+        analysis=None,
+        glossary=[],
+    )
+
+    assert [o.translated.id for o in outputs] == ["u1", "u3"]
+    assert outputs[0].translated.target_text == "alpha translation"
+    assert outputs[1].translated.target_text == "gamma singleton"
+    assert len(llm.calls) == 2
+    fallback_user = next(m for m in llm.calls[1] if m.role == "user")
+    assert "<<<SRC" not in fallback_user.content
+
+
+def test_execute_batch_preserves_inline_flags_per_unit() -> None:
+    raw = (
+        '<<<TGT id="u1">>>\nalpha <unsure>word</unsure> end\n'
+        '<<<TGT id="u2">>>\nbeta <sense>pick|because</sense> end\n'
+    )
+    llm = _EchoLLM([raw])
+    translator = TranslateChunk(llm=llm, retriever=_NoExamplesRetriever())
+
+    outputs = translator.execute_batch(
+        _units(["u1", "u2"]),
+        target_lang="vi",
+        source_lang="en",
+        analysis=None,
+        glossary=[],
+    )
+
+    kinds_u1 = [f.kind for f in outputs[0].flags]
+    kinds_u2 = [f.kind for f in outputs[1].flags]
+    assert kinds_u1 == [FlagKind.UNSURE]
+    assert kinds_u2 == [FlagKind.SENSE]
+    assert outputs[1].flags[0].reason == "because"

@@ -1,4 +1,4 @@
-"""CLI smoke tests — exercise ``kb index`` + retrieval subcommands end-to-end.
+"""CLI smoke tests — exercise ``translate kb index`` + retrieval subcommands.
 
 Uses the in-memory fakes so tests stay fast and don't hit Chroma or load
 any real embedding model.
@@ -11,7 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from knowledge.cli import main as cli
+from clis import main as cli
+from knowledge.core import retrieval as retrieval_module
 from knowledge.core.entities import EntityStore
 from knowledge.core.glossary import GlossaryStore
 from knowledge.core.languages import LanguageStore
@@ -24,7 +25,7 @@ FIXTURE_VAULT = Path(__file__).parent / "fixtures" / "vault"
 
 @pytest.fixture
 def fake_retriever(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Retriever:
-    """Patch the CLI's ``Retriever.from_env`` to return one backed by fakes."""
+    """Force ``Retriever.from_env`` to return one backed by in-memory fakes."""
     retriever = Retriever(
         embedder=FakeEmbedder(),
         store=InMemoryStore(),
@@ -32,7 +33,9 @@ def fake_retriever(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Retriever
         entity_store=EntityStore(tmp_path / "entities.json"),
         language_store=LanguageStore(tmp_path / "languages.json"),
     )
-    monkeypatch.setattr(cli, "Retriever", type("R", (), {"from_env": staticmethod(lambda: retriever)}))
+    monkeypatch.setattr(
+        retrieval_module.Retriever, "from_env", staticmethod(lambda: retriever)
+    )
     monkeypatch.setenv("KB_VAULT", str(FIXTURE_VAULT))
     return retriever
 
@@ -41,12 +44,14 @@ def test_kb_index_then_search(
     fake_retriever: Retriever,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    assert cli.main(["index", "--json"]) == 0
+    assert cli.main(["kb", "index", "--json"]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["notes"]["added"] >= 1
     assert report["examples"]["added"] == 1
 
-    assert cli.main(["search", "contract termination", "--domain", "legal", "--k", "3"]) == 0
+    assert cli.main(
+        ["kb", "search", "contract termination", "--domain", "legal", "--k", "3"]
+    ) == 0
     hits = json.loads(capsys.readouterr().out)
     assert hits
     assert hits[0]["metadata"]["note_id"] == "legal-contract-terms"
@@ -56,14 +61,14 @@ def test_kb_glossary_and_lang_card(
     fake_retriever: Retriever,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    cli.main(["index", "--json"])
+    cli.main(["kb", "index", "--json"])
     capsys.readouterr()
 
-    assert cli.main(["glossary", "settlement", "--target", "ja"]) == 0
+    assert cli.main(["kb", "glossary", "settlement", "--target", "ja"]) == 0
     entry = json.loads(capsys.readouterr().out)
     assert entry["id"] == "glossary-settlement"
 
-    assert cli.main(["lang-card", "ja"]) == 0
+    assert cli.main(["kb", "lang-card", "ja"]) == 0
     card = json.loads(capsys.readouterr().out)
     assert card["lang"] == "ja"
 
@@ -85,6 +90,7 @@ def test_kb_examples_add_writes_needs_review(
 
     rc = cli.main(
         [
+            "kb",
             "examples",
             "add",
             str(src_file),

@@ -9,8 +9,9 @@ from dataclasses import dataclass
 class GlossaryEntry:
     """A single term in the run-scoped glossary.
 
-    ``kind`` records whether the entry came from ``kb glossary``,
-    ``kb entity``, ``kb idiom``, or resolver-level polysemy lock.
+    ``kind`` records whether the entry came from ``translate kb glossary``,
+    ``translate kb entity``, ``translate kb idiom``, or resolver-level
+    polysemy lock.
     """
 
     source: str

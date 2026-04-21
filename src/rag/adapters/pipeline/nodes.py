@@ -24,12 +24,12 @@ from ...use_cases.repair_chunk import RepairChunk
 from ...use_cases.resolve_terms import ResolveTerms
 from ...use_cases.review_chunk import ReviewChunk, ReviewInputs
 from ...use_cases.translate_chunk import TranslateChunk
-from ..metrics import (
+from metrics import (
     DefaultMetricProfileRegistry,
     InMemoryCustomCheckRegistry,
     default_custom_check_registry,
 )
-from ..metrics.checks import (
+from metrics.checks import (
     GlossaryAdherenceCheck,
     LengthSanityCheck,
     MarkdownIntegrityCheck,
@@ -137,18 +137,21 @@ def build_default_graph(
         branch.chunks_total = len(state.units)
         branch.flags_by_unit = {}
         flagged_units = 0
-        for unit in state.units:
-            output = translator.execute(
-                unit,
+        batch_size = translator.batch_size
+        for start in range(0, len(state.units), batch_size):
+            batch = state.units[start : start + batch_size]
+            outputs = translator.execute_batch(
+                batch,
                 target_lang=lang,
                 source_lang=state.config.source_lang,
                 analysis=state.analysis,
                 glossary=branch.glossary,
             )
-            branch.translations[unit.id] = output.translated
-            if output.flags:
-                branch.flags_by_unit[unit.id] = list(output.flags)
-                flagged_units += 1
+            for unit, output in zip(batch, outputs, strict=True):
+                branch.translations[unit.id] = output.translated
+                if output.flags:
+                    branch.flags_by_unit[unit.id] = list(output.flags)
+                    flagged_units += 1
         deps.repository.write_translated(
             state.paths, lang, branch.translations.values()
         )
@@ -383,15 +386,18 @@ def build_simple_graph(deps: PipelineDependencies) -> Graph:
     def translate_simple(state: RunState, lang: str) -> RunState:
         branch = state.branch(lang)
         branch.chunks_total = len(state.units)
-        for unit in state.units:
-            output = translator.execute(
-                unit,
+        batch_size = translator.batch_size
+        for start in range(0, len(state.units), batch_size):
+            batch = state.units[start : start + batch_size]
+            outputs = translator.execute_batch(
+                batch,
                 target_lang=lang,
                 source_lang=state.config.source_lang,
                 analysis=None,
                 glossary=[],
             )
-            branch.translations[unit.id] = output.translated
+            for unit, output in zip(batch, outputs, strict=True):
+                branch.translations[unit.id] = output.translated
         branch.chunks_passed = branch.chunks_total
         deps.repository.write_translated(
             state.paths, lang, branch.translations.values()

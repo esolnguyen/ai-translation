@@ -93,7 +93,7 @@ def make_term_cache(kb_store_path: Path) -> TermLookupCache:
     """Factory — builds a JSON cache under ``<kb_store_path>/lookup-cache.json``.
 
     The KB version is derived from a stable digest of the top-level file
-    listing (name + mtime) so ``kb index`` mutations invalidate entries
+    listing (name + mtime) so ``translate kb index`` mutations invalidate entries
     without requiring a hand-maintained version file.
     """
 

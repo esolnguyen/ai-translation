@@ -14,7 +14,7 @@ Last skill in the per-chunk chain. Input is a reviewer-approved pass-2 draft. Ou
 - `draft_path` — `<run_dir>/<target_lang>/chunks/<id>.md` (pass-2 output)
 - `review_path` — `<run_dir>/<target_lang>/review/<id>.yaml`
 - `glossary_path` — `<run_dir>/glossary.<target_lang>.json` (to verify no glossary drift during edit)
-- `style_card` — from `kb lang-card <target_lang>` (passed as JSON by the orchestrator)
+- `style_card` — from `translate kb lang-card <target_lang>` (passed as JSON by the orchestrator)
 
 ## Procedure
 

@@ -5,7 +5,7 @@ tools: Bash, Read, Write
 skills: []
 ---
 
-Skill dependencies: none. The reviewer is a read-only judge — it shells out to the `kb` CLI via Bash (for `kb search`, `kb examples`, `kb lang-card`) and writes its YAML report to disk. It never invokes other skills or subagents.
+Skill dependencies: none. The reviewer is a read-only judge — it shells out to the `translate` CLI via Bash (for `translate kb search`, `translate kb examples`, `translate kb lang-card`, `translate metrics check`) and writes its YAML report to disk. It never invokes other skills or subagents.
 
 # translation-reviewer
 
@@ -25,9 +25,9 @@ The orchestrator passes:
 ## Procedure
 
 1. Read `<run_dir>/analysis.json` for the domain prime (verbatim injection).
-2. Fetch the style card: `kb lang-card <target_lang>` — JSON. Extract checklist-relevant rules (pronouns, classifiers, register, punctuation).
-3. **Ground sub-score** — call `kb search "<source_text summary>" --domain <domain> --k 5`. Judge whether `target_text` aligns with terminology/style/conventions of the returned notes. Score 1–5.
-4. **Example sub-score** — call `kb examples @<tmpfile with source_text> --src <src> --tgt <tgt> --domain <domain> --k 3`. Judge stylistic similarity (tone, register, phrasing) vs returned golden pairs. Score 1–5.
+2. Fetch the style card: `translate kb lang-card <target_lang>` — JSON. Extract checklist-relevant rules (pronouns, classifiers, register, punctuation).
+3. **Ground sub-score** — call `translate kb search "<source_text summary>" --domain <domain> --k 5`. Judge whether `target_text` aligns with terminology/style/conventions of the returned notes. Score 1–5.
+4. **Example sub-score** — call `translate kb examples query @<tmpfile with source_text> --src <src> --tgt <tgt> --domain <domain> --k 3`. Judge stylistic similarity (tone, register, phrasing) vs returned golden pairs. Score 1–5.
 5. **Checklist sub-score** — run the full checklist below. Score = `passed / total × 5`.
 6. **Composite** = `0.35 × ground + 0.35 × example + 0.30 × checklist`.
 7. **Decision**:
@@ -42,9 +42,9 @@ The orchestrator passes:
 - [ ] Tone / register matches the analyzer's call
 - [ ] No sentences added, dropped, or merged without reason
 - [ ] Polysemous words use the sense picked by `translate-resolve-terms`
-- [ ] Named entities rendered per `kb entity` decisions
-- [ ] Idioms handled per `kb idiom` (no literal translations)
-- [ ] Language-specific items from `kb lang-card` (pronouns, classifiers, particles, punctuation)
+- [ ] Named entities rendered per `translate kb entity` decisions
+- [ ] Idioms handled per `translate kb idiom` (no literal translations)
+- [ ] Language-specific items from `translate kb lang-card` (pronouns, classifiers, particles, punctuation)
 
 ## Output
 

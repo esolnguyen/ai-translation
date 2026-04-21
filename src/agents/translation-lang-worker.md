@@ -44,7 +44,7 @@ The orchestrator passes:
 1. Create per-language scratch: `mkdir <run_dir>/<target_lang>/{chunks,review}`.
 2. Read `units.jsonl`, skip cells that already have a non-empty target value for this language (idempotent).
 3. For each batch of ~`batch_size` rows:
-    1. Invoke the `translate-translate` skill (pass 1) with `{analysis, glossary, style_card: kb lang-card <target_lang>, batch_units, neighbor_context}`. Write draft to `<run_dir>/<target_lang>/chunks/<batch_id>.md`.
+    1. Invoke the `translate-translate` skill (pass 1) with `{analysis, glossary, style_card: translate kb lang-card <target_lang>, batch_units, neighbor_context}`. Write draft to `<run_dir>/<target_lang>/chunks/<batch_id>.md`.
     2. Invoke `translate-cycle-check` on flagged spans only. Write diffs alongside the draft.
     3. Invoke `translate-translate` (pass 2) with the pass-1 draft + flags + cycle-check diffs. Overwrite the draft file.
     4. Spawn the **`translation-reviewer`** subagent on the pass-2 draft. Read its YAML from `<run_dir>/<target_lang>/review/<batch_id>.yaml`.

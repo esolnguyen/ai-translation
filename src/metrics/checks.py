@@ -9,10 +9,21 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
-from ...domain import GlossaryEntry
-from ...use_cases.ports import CustomCheck, CustomCheckResult
+from .ports import CustomCheck, CustomCheckResult
+
+
+class GlossaryEntryLike(Protocol):
+    """Structural type for glossary entries passed to checks.
+
+    Matches ``rag.domain.GlossaryEntry`` but keeps ``metrics`` free of any
+    runtime dependency on the RAG package — so the CLI can import
+    ``metrics`` without loading the translation pipeline.
+    """
+
+    source: str
+    target: str
 
 
 @dataclass(slots=True)
@@ -21,7 +32,7 @@ class ChunkContext:
 
     target_lang: str = ""
     source_lang: str = ""
-    glossary: list[GlossaryEntry] = field(default_factory=list)
+    glossary: list[GlossaryEntryLike] = field(default_factory=list)
     length_ratio_range: tuple[float, float] = (0.3, 3.0)
 
 

@@ -55,7 +55,7 @@ def _configure_logging(level: str | None = None) -> None:
     try:
         from dotenv import load_dotenv
 
-        load_dotenv(override=False)
+        load_dotenv(override=True)
     except ImportError:
         pass
 
@@ -150,7 +150,11 @@ def create_app(
         _write_status(run_dir, {"run_id": run_id, "status": "queued"})
         logger.info(
             "run queued run_id=%s file=%s langs=%s simple=%s roundtrip=%s",
-            run_id, file.filename, langs, simple_mode, roundtrip,
+            run_id,
+            file.filename,
+            langs,
+            simple_mode,
+            roundtrip,
         )
 
         background_tasks.add_task(_execute_run, app, config, run_dir)
@@ -213,12 +217,14 @@ def _run_in_thread(translator: Any, config: RunConfig, run_dir: Path) -> None:
         _write_status(run_dir, payload)
         logger.exception(
             "run failed run_id=%s elapsed=%.2fs",
-            config.run_id, time.perf_counter() - started,
+            config.run_id,
+            time.perf_counter() - started,
         )
         return
     logger.info(
         "run done   run_id=%s elapsed=%.2fs",
-        config.run_id, time.perf_counter() - started,
+        config.run_id,
+        time.perf_counter() - started,
     )
 
 

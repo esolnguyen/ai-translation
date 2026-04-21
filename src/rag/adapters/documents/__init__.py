@@ -2,7 +2,7 @@
 
 Factory: ``make_document_adapter(path)`` dispatches on file extension.
 PDFs are deliberately rejected — they are knowledge sources, not translation
-targets (``kb extract`` ingests them into the vault).
+targets (``translate kb extract`` ingests them into the vault).
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def make_document_adapter(path: Path) -> DocumentAdapter:
     if ext == ".pdf":
         raise ValueError(
             "PDF is a knowledge source, not a translation target. "
-            "Use `kb extract` to ingest it into the vault."
+            "Use `translate kb extract` to ingest it into the vault."
         )
     try:
         return _REGISTRY[ext]()

@@ -62,7 +62,7 @@ class ReviewChunk:
         return self._profile
 
     def execute(self, inputs: ReviewInputs) -> ReviewResult:
-        from ..adapters.metrics.checks import ChunkContext
+        from metrics.checks import ChunkContext
 
         ctx = ChunkContext(
             target_lang=inputs.target_lang,

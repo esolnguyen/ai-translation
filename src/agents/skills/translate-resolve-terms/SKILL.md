@@ -24,9 +24,9 @@ Runs **once per document, per target language**, before any prose is translated.
     - Words that appear multiple times in this document in what **might** be different senses.
     - Do **not** burn tokens on unambiguous words; a short, high-signal list beats exhaustive.
 3. For each candidate, look it up:
-    - `kb glossary "<term>" --target <target_lang>` — if the vault already has a canonical pick, that's authoritative; record and move on.
-    - `kb entity "<term>"` — if it's a known proper noun, defer to the entity decision.
-    - `kb search "<term>" --domain <domain> --k 3` — to see how the term is used in the domain's vault notes.
+    - `translate kb glossary "<term>" --target <target_lang>` — if the vault already has a canonical pick, that's authoritative; record and move on.
+    - `translate kb entity "<term>"` — if it's a known proper noun, defer to the entity decision.
+    - `translate kb search "<term>" --domain <domain> --k 3` — to see how the term is used in the domain's vault notes.
 4. Decide one sense per candidate using the analyzer's `domain` + `sub_domain` + `register`. Record the rationale briefly — future-you needs to know *why* `strike` was locked to `cú đá`, not `đình công`.
 5. Cache invalidation: hash the source text (sha256 of `units.jsonl`). If `<run_dir>/resolved-terms.json` already exists with a matching hash, reuse it and skip.
 
@@ -65,5 +65,5 @@ Emit to stdout so the orchestrator can hand it straight to `translate-glossary`.
 
 - Resolve every word — only ambiguous ones. Non-polysemous terms go through `translate-glossary` unchanged.
 - Translate prose here — this skill only locks **term-level** choices.
-- Modify the vault. New terms surfaced by this step are passed to the user (and optionally queued for `kb glossary add`) — they're never auto-written.
+- Modify the vault. New terms surfaced by this step are passed to the user (and optionally queued for `translate kb glossary add`) — they're never auto-written.
 - Run per chunk. Document-level state, runs once.

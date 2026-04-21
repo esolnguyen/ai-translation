@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ...use_cases.ports import CustomCheck, CustomCheckResult
+from .ports import CustomCheck, CustomCheckResult
 
 _POLISH_DIACRITICS = set("ąęćłńóśźżĄĘĆŁŃÓŚŹŻ")
 _DE_FORMAL_RE = re.compile(r"\b(Sie|Ihnen|Ihre?m?s?|Ihr)\b")
