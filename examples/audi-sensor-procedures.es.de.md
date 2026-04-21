@@ -11,9 +11,9 @@ audience: Audi workshop technicians
 
 # Audi Serviceverfahren
 
-Elf technische Sätze aus einem Werkstatthandbuch (Modelle A4 / A6), die den Ausbau von Türverkleidungen, Prüfungen des Fensterhebers und die Diagnose des Kühlmitteltemperatursensors abdecken. Jedes Element der nummerierten Liste entspricht eins zu eins `test_data[N − 1].input_text` in `test.json`, sodass die erzeugten Übersetzungen anschließend mit den akzeptierten Varianten in `expected_answer` verglichen werden können.
+Elf technische Sätze, entnommen aus einem Werkstatthandbuch (Modelle A4 / A6), die den Ausbau von Verkleidungen, Prüfungen des Fensterhebers und die Diagnose des Kühlmitteltemperatursensors abdecken. Jedes Element der nummerierten Liste entspricht eins zu eins `test_data[N − 1].input_text` in `test.json`, sodass die erzeugten Übersetzungen anschließend mit den in `expected_answer` akzeptierten Varianten verglichen werden können.
 
-## Ausbau und Erstprüfung
+## Ausbau und erste Prüfung
 
 1. Die Türverkleidung und die Schutzabdeckung ausbauen
 2. Die einwandfreie Funktion des Fensterhebers prüfen.
@@ -25,13 +25,13 @@ Elf technische Sätze aus einem Werkstatthandbuch (Modelle A4 / A6), die den Aus
 ## Kühlmitteltemperatursensor
 
 4. Die vom Kühlmitteltemperatursensor empfangenen Informationen werden direkt für die Einstellung der Einspritzzeit verwendet.
-5. Bei diesen Vorgängen kommt es vor, dass das Sensorgehäuse perforiert wird, wodurch das Kühlmittel in das Innere eindringen und es korrodieren kann.
+5. Bei diesen Vorgängen kommt es vor, dass das Sensorgehäuse durchbohrt wird, sodass das Kühlmittel sein Inneres erreichen und es korrodieren kann.
 
-## Prüfungen vor dem Austausch
+## Vor der Auswechslung durchzuführende Prüfungen
 
-6. Vor dem Austausch sind folgende Prüfungen durchzuführen (unter Bezugnahme auf die Fahrzeugprüfdaten):
+6. Vor seinem Austausch sind folgende Prüfungen durchzuführen (unter Bezugnahme auf die Fahrzeugprüfdaten):
 7. Bei abgezogenem Stecker und eingeschalteter Zündung die Referenzspannung.
 8. Sensorwiderstand.
-9. Ableitungen an den Sensorkontakten.
+9. Kurzschlüsse an den Sensorkontakten.
 10. Isolierung der Leitungen.
-11. Bei aufgestecktem Stecker die Klemmenspannung des Sensors und deren Veränderungen mit der Temperatur.
+11. Bei aufgestecktem Stecker die Klemmenspannung des Sensors und ihre Veränderungen mit der Temperatur.
