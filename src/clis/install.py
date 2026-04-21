@@ -17,9 +17,15 @@ Claude Code layout (``<dst> = .claude`` or ``~/.claude``):
 Kiro layout (``<dst> = .kiro`` or ``~/.kiro``):
 
     <dst>/skills/<skill>/SKILL.md     → src/agents/skills/<skill>/
-    <dst>/commands/translate.md       → src/agents/skills/translate/SKILL.md
-    <dst>/agents/<name>.md            → src/agents/<name>.md
-    <dst>/agents/<name>.json          → generated manifest pinning skill resources
+    <dst>/agents/translate.md         → src/agents/skills/translate/SKILL.md
+    <dst>/agents/translate.json       → generated manifest attaching every
+                                        sibling skill as a resource
+    <dst>/agents/<subagent>.md        → src/agents/<subagent>.md
+    <dst>/agents/<subagent>.json      → generated manifest pinning the
+                                        subagent's declared skill deps
+
+Kiro has no slash-command surface, so ``translate`` is exposed as an
+agent: ``kiro-cli --agent translate`` (or pick it from the TUI).
 """
 
 from __future__ import annotations
@@ -34,11 +40,15 @@ from typing import Iterable
 
 import yaml
 
-# Agents orchestrated at the top level (Kiro gets a JSON manifest for each).
-ORCHESTRATOR_AGENTS = ("translation-lang-worker", "translation-reviewer")
+# Subagents: prompt file lives at ``src/agents/<name>.md``.
+SUBAGENTS = ("translation-lang-worker", "translation-reviewer")
 
-# Skill whose SKILL.md doubles as the /translate slash command in Kiro.
-SLASH_COMMAND_SKILL = "translate"
+# Top-level user-facing orchestrator. In Claude Code this is a slash-command
+# skill at ``.claude/skills/translate/``; in Kiro there is no slash-command
+# surface, so we additionally register it as an agent named ``translate``
+# whose prompt is the skill's ``SKILL.md`` and whose resources are every
+# sibling skill (so the orchestrator can delegate to them).
+ORCHESTRATOR_AGENT = "translate"
 
 
 # ─── Paths ─────────────────────────────────────────────────────────────────
@@ -108,11 +118,23 @@ def _parse_frontmatter(md: Path) -> dict:
     return yaml.safe_load(text[4:end]) or {}
 
 
-def _kiro_manifest(agent_md: Path) -> dict:
+def _kiro_manifest(
+    agent_md: Path,
+    *,
+    agent_name: str | None = None,
+    resource_skills: list[str] | None = None,
+) -> dict:
+    """Build a Kiro agent manifest.
+
+    ``resource_skills`` lets callers override which skills are attached as
+    context (needed for the orchestrator agent whose frontmatter doesn't
+    enumerate its skill deps). When omitted, reads ``skills:`` from the
+    prompt file's frontmatter.
+    """
     meta = _parse_frontmatter(agent_md)
-    name = meta.get("name") or agent_md.stem
+    name = agent_name or meta.get("name") or agent_md.stem
     description = meta.get("description", "")
-    skill_deps = meta.get("skills") or []
+    skill_deps = resource_skills if resource_skills is not None else (meta.get("skills") or [])
 
     resources = [
         f"file://../skills/{skill}/SKILL.md"
@@ -122,7 +144,7 @@ def _kiro_manifest(agent_md: Path) -> dict:
     return {
         "name": name,
         "description": description,
-        "prompt": f"file://./{agent_md.stem}.md",
+        "prompt": f"file://./{name}.md",
         "resources": resources,
         "tools": ["*"],
     }
@@ -153,7 +175,7 @@ def _install_claude(scope: str, force: bool) -> int:
     agents_dst = base / "agents"
     agents_dst.mkdir(parents=True, exist_ok=True)
     agent_count = 0
-    for name in ORCHESTRATOR_AGENTS:
+    for name in SUBAGENTS:
         src = _agents_dir() / f"{name}.md"
         if not src.exists():
             print(f"   ! skipping missing agent: {src}")
@@ -166,24 +188,46 @@ def _install_claude(scope: str, force: bool) -> int:
 
 def _install_kiro(scope: str, force: bool) -> int:
     base = _target_base("kiro", scope)
-    print(f"==> Installing Kiro skills + agents + commands → {base}")
+    print(f"==> Installing Kiro skills + agents → {base}")
 
     skill_count = _install_skills(base / "skills", force=force)
     print(f"   ✓ {skill_count} skill(s) linked into {base / 'skills'}")
 
-    # Slash command: Kiro reads /translate from <base>/commands/translate.md
-    cmd_src = _skills_dir() / SLASH_COMMAND_SKILL / "SKILL.md"
-    if cmd_src.exists():
-        _symlink(cmd_src, base / "commands" / f"{SLASH_COMMAND_SKILL}.md", force=force)
-        print(f"   ✓ /{SLASH_COMMAND_SKILL} command linked into {base / 'commands'}")
-    else:
-        print(f"   ! skipping missing slash-command source: {cmd_src}")
-
-    # Agents: symlink the .md prompt + generate a .json manifest.
     agents_dst = base / "agents"
     agents_dst.mkdir(parents=True, exist_ok=True)
+
+    # Clean up the legacy commands/ directory from earlier installer versions.
+    # Kiro never read this path; keeping it around just invites confusion.
+    legacy_commands = base / "commands"
+    if legacy_commands.exists():
+        shutil.rmtree(legacy_commands)
+        print(f"   ! removed legacy {legacy_commands} (Kiro ignores commands/)")
+
     agent_count = 0
-    for name in ORCHESTRATOR_AGENTS:
+
+    # 1. Orchestrator agent: prompt is the skill's SKILL.md; resources are
+    #    every sibling skill so the orchestrator can delegate to them.
+    orchestrator_prompt = _skills_dir() / ORCHESTRATOR_AGENT / "SKILL.md"
+    if orchestrator_prompt.exists():
+        _symlink(orchestrator_prompt, agents_dst / f"{ORCHESTRATOR_AGENT}.md", force=force)
+        sibling_skills = [
+            p.name for p in _iter_skill_dirs() if p.name != ORCHESTRATOR_AGENT
+        ]
+        manifest = _kiro_manifest(
+            orchestrator_prompt,
+            agent_name=ORCHESTRATOR_AGENT,
+            resource_skills=sibling_skills,
+        )
+        (agents_dst / f"{ORCHESTRATOR_AGENT}.json").write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+        )
+        agent_count += 1
+    else:
+        print(f"   ! skipping missing orchestrator prompt: {orchestrator_prompt}")
+
+    # 2. Subagents (translation-lang-worker, translation-reviewer): prompt
+    #    is src/agents/<name>.md; resources come from frontmatter `skills:`.
+    for name in SUBAGENTS:
         src = _agents_dir() / f"{name}.md"
         if not src.exists():
             print(f"   ! skipping missing agent: {src}")

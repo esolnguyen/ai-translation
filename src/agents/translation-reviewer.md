@@ -43,7 +43,7 @@ The orchestrator passes:
 - [ ] No sentences added, dropped, or merged without reason
 - [ ] Polysemous words use the sense picked by `translate-resolve-terms`
 - [ ] Named entities rendered per `translate kb entity` decisions
-- [ ] Idioms handled per `translate kb idiom` (no literal translations)
+- [ ] Fixed expressions and idiomatic phrases handled per glossary entries (no literal translations)
 - [ ] Language-specific items from `translate kb lang-card` (pronouns, classifiers, particles, punctuation)
 
 ## Output
