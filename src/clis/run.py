@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
+import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -29,8 +33,24 @@ def cmd_run(args: argparse.Namespace) -> int:
         simple_mode=args.simple_mode,
         roundtrip=args.roundtrip,
     )
+    logger.info(
+        "run start source=%s targets=%s simple=%s dry_run=%s",
+        config.source_path,
+        ",".join(target_langs),
+        config.simple_mode,
+        config.dry_run,
+    )
+    t0 = time.monotonic()
     report = run_translate(config)
+    elapsed = time.monotonic() - t0
+    logger.info(
+        "run end   run_id=%s elapsed=%.2fs outputs=%d",
+        report.run_id,
+        elapsed,
+        len(report.outputs),
+    )
     for lang, path in report.outputs.items():
+        logger.info("output lang=%s path=%s", lang, path)
         print(f"{lang}\t{path}")
     return 0
 
