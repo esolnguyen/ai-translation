@@ -9,6 +9,7 @@ dependencies = [
     "python-frontmatter>=1.1",
     "markdown-it-py>=3.0",
     "chromadb>=0.5",
+    "posthog<3",
     "sentence-transformers>=3.0",
 ]
 

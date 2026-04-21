@@ -1,0 +1,27 @@
+# Core (knowledge base + retrieval)
+pyyaml>=6.0
+python-frontmatter>=1.1
+markdown-it-py>=3.0
+chromadb>=0.5
+posthog<3
+sentence-transformers>=3.0
+
+# RAG pipeline
+claude-agent-sdk>=0.1
+python-docx>=1.1
+openpyxl>=3.1
+pysrt>=1.1
+
+# Document extraction
+pypdf>=4.0
+beautifulsoup4>=4.12
+
+# LLM providers
+openai>=1.40
+google-genai>=0.8
+
+# HTTP API
+fastapi>=0.115
+uvicorn>=0.32
+python-multipart>=0.0.9
+python-dotenv>=1.0
