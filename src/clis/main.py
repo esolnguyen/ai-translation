@@ -11,6 +11,8 @@ Structure:
 from __future__ import annotations
 
 import argparse
+import logging
+import os
 
 from . import install, kb, metrics, run
 
@@ -42,7 +44,34 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _load_dotenv() -> None:
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    load_dotenv(override=False)
+
+
+def _configure_logging() -> None:
+    level = os.environ.get("RAG_LOG_LEVEL", "INFO").upper()
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)-5s %(name)s :: %(message)s",
+        datefmt="%H:%M:%S",
+        force=True,
+    )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    for noisy in (
+        "chromadb.telemetry",
+        "chromadb.telemetry.product",
+        "chromadb.telemetry.product.posthog",
+    ):
+        logging.getLogger(noisy).setLevel(logging.CRITICAL)
+
+
 def main(argv: list[str] | None = None) -> int:
+    _load_dotenv()
+    _configure_logging()
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

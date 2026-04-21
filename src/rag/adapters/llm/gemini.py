@@ -6,7 +6,9 @@ Uses the ``google-genai`` SDK. System messages are folded into the
 """
 
 from __future__ import annotations
+import logging
 import os
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
@@ -15,6 +17,7 @@ from ...use_cases.ports import LLMClient, LLMMessage
 if TYPE_CHECKING:
     from google.genai.types import ContentListUnionDict
 
+logger = logging.getLogger(__name__)
 _ROLE_MAP = {"user": "user", "assistant": "model"}
 
 
@@ -72,9 +75,26 @@ class GeminiClient(LLMClient):
             max_output_tokens=max_tokens,
             system_instruction="\n\n".join(system_parts) or None,
         )
+        logger.info(
+            "llm gemini request model=%s messages=%d max_tokens=%s temperature=%s",
+            self._config.model,
+            len(contents),
+            max_tokens,
+            temperature,
+        )
+        t0 = time.monotonic()
         response = self._client.models.generate_content(
             model=self._config.model,
             contents=cast("ContentListUnionDict", contents),
             config=config,
+        )
+        elapsed = time.monotonic() - t0
+        usage = getattr(response, "usage_metadata", None)
+        logger.info(
+            "llm gemini model=%s elapsed=%.2fs in=%s out=%s",
+            self._config.model,
+            elapsed,
+            getattr(usage, "prompt_token_count", "?"),
+            getattr(usage, "candidates_token_count", "?"),
         )
         return response.text or ""

@@ -5,7 +5,9 @@ api version and key are read from env by ``from_env()``.
 """
 
 from __future__ import annotations
+import logging
 import os
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
@@ -15,6 +17,8 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
     from openai.types.responses import ResponseInputParam
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(slots=True, frozen=True)
 class AzureOpenAIConfig:
@@ -22,6 +26,7 @@ class AzureOpenAIConfig:
     api_key: str
     deployment: str
     api_version: str
+    base_url: str | None = None  # set → plain OpenAI client (Foundry v1 mode)
 
 
 class AzureOpenAIClient(LLMClient):
@@ -33,6 +38,10 @@ class AzureOpenAIClient(LLMClient):
 
     @staticmethod
     def _build_client(config: AzureOpenAIConfig):
+        if config.base_url:
+            from openai import OpenAI
+
+            return OpenAI(base_url=config.base_url, api_key=config.api_key)
         from openai import AzureOpenAI
 
         return AzureOpenAI(
@@ -43,23 +52,22 @@ class AzureOpenAIClient(LLMClient):
 
     @classmethod
     def from_env(cls) -> AzureOpenAIClient:
-        missing = [
-            name
-            for name in (
-                "AZURE_OPENAI_ENDPOINT",
-                "AZURE_OPENAI_API_KEY",
-                "AZURE_OPENAI_DEPLOYMENT",
-            )
-            if not os.environ.get(name)
-        ]
+        base_url = os.environ.get("AZURE_OPENAI_BASE_URL")
+        required = ("AZURE_OPENAI_API_KEY", "AZURE_OPENAI_DEPLOYMENT") if base_url else (
+            "AZURE_OPENAI_ENDPOINT",
+            "AZURE_OPENAI_API_KEY",
+            "AZURE_OPENAI_DEPLOYMENT",
+        )
+        missing = [name for name in required if not os.environ.get(name)]
         if missing:
             raise RuntimeError(f"Azure OpenAI env vars missing: {', '.join(missing)}")
         return cls(
             AzureOpenAIConfig(
-                endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+                endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT", ""),
                 api_key=os.environ["AZURE_OPENAI_API_KEY"],
                 deployment=os.environ["AZURE_OPENAI_DEPLOYMENT"],
                 api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21"),
+                base_url=base_url,
             )
         )
 
@@ -87,11 +95,28 @@ class AzureOpenAIClient(LLMClient):
             "list[ChatCompletionMessageParam]",
             [{"role": m.role, "content": m.content} for m in messages],
         )
+        logger.info(
+            "llm chat request deployment=%s messages=%d max_tokens=%s temperature=%s",
+            self._config.deployment,
+            len(payload),
+            max_tokens,
+            temperature,
+        )
+        t0 = time.monotonic()
         response = self._client.chat.completions.create(
             model=self._config.deployment,
             messages=payload,
             temperature=temperature,
             max_tokens=max_tokens,
+        )
+        elapsed = time.monotonic() - t0
+        usage = getattr(response, "usage", None)
+        logger.info(
+            "llm chat deployment=%s elapsed=%.2fs in=%s out=%s",
+            self._config.deployment,
+            elapsed,
+            getattr(usage, "prompt_tokens", "?"),
+            getattr(usage, "completion_tokens", "?"),
         )
         return response.choices[0].message.content or ""
 
@@ -103,12 +128,31 @@ class AzureOpenAIClient(LLMClient):
     ) -> str:
         payload = cast(
             "ResponseInputParam",
-            [{"role": m.role, "content": m.content} for m in messages],
+            [
+                {"type": "message", "role": m.role, "content": m.content}
+                for m in messages
+            ],
         )
         kwargs: dict = {"model": self._config.deployment, "input": payload}
         if max_tokens is not None:
             kwargs["max_output_tokens"] = max_tokens
+        logger.info(
+            "llm responses request deployment=%s messages=%d max_tokens=%s",
+            self._config.deployment,
+            len(messages),
+            max_tokens,
+        )
+        t0 = time.monotonic()
         response = self._client.responses.create(**kwargs)
+        elapsed = time.monotonic() - t0
+        usage = getattr(response, "usage", None)
+        logger.info(
+            "llm responses deployment=%s elapsed=%.2fs in=%s out=%s",
+            self._config.deployment,
+            elapsed,
+            getattr(usage, "input_tokens", "?"),
+            getattr(usage, "output_tokens", "?"),
+        )
         return getattr(response, "output_text", "") or ""
 
     @staticmethod
