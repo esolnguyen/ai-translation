@@ -1,0 +1,46 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-translation:latest
+    container_name: ai-translation-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      KB_VAULT: /data/vault
+      KB_STORE_PATH: /data/kb
+      RAG_API_RUNS_DIR: /data/runs
+      HF_HOME: /hf-cache
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./vault:/data/vault
+      - ./sources:/data/sources:ro
+      - kb:/data/kb
+      - runs:/data/runs
+      - hf-cache:/hf-cache
+    command: ["translate-api", "--host", "0.0.0.0", "--port", "8000"]
+
+  # One-shot helper to (re)build the vector index from the mounted vault.
+  # Run with: `docker compose run --rm indexer`
+  indexer:
+    image: ai-translation:latest
+    profiles: ["tools"]
+    env_file:
+      - .env
+    environment:
+      KB_VAULT: /data/vault
+      KB_STORE_PATH: /data/kb
+      HF_HOME: /hf-cache
+    volumes:
+      - ./vault:/data/vault:ro
+      - kb:/data/kb
+      - hf-cache:/hf-cache
+    command: ["translate", "kb", "index"]
+
+volumes:
+  kb:
+  runs:
+  hf-cache:

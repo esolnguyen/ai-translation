@@ -1,0 +1,45 @@
+# Host integrations (Claude Code / Kiro skills + agents) — not part of the service
+src/agents/
+.claude/
+.kiro/
+
+# Secrets (passed via --env-file / compose env_file instead)
+.env
+.env.*
+!.env.example
+
+# VCS + editor junk
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+
+# Python build + cache artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.benchmarks/
+
+# Runtime data — mount as volumes, don't bake into the image
+vault/
+sources/
+.kb/
+.translate-runs/
+
+# Tests, examples, host installer — not needed at runtime
+tests/
+examples/
+scripts/install.sh
+test.json
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore
