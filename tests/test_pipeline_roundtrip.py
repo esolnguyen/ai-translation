@@ -88,11 +88,6 @@ class _EmptyRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return None
 
-    def idiom(
-        self, phrase: str, source_lang: str, target_lang: str
-    ) -> dict[str, Any] | None:
-        return None
-
 
 class _TableEmbedder(Embedder):
     def __init__(self, table: dict[str, list[float]]) -> None:

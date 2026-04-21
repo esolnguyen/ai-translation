@@ -27,7 +27,6 @@ class NoteKind(str, Enum):
     GLOSSARY = "glossary"
     LANGUAGE = "language"
     ENTITY = "entity"
-    IDIOM = "idiom"
 
 
 @dataclass(frozen=True, slots=True)

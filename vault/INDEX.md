@@ -16,7 +16,7 @@ the top so reviewers spend their time where it matters most.
 
 ```dataview
 TABLE confidence, domain, status, file.mtime as "modified"
-FROM "domains" OR "examples" OR "glossary" OR "languages" OR "entities" OR "idioms"
+FROM "domains" OR "examples" OR "glossary" OR "languages" OR "entities"
 WHERE status = "needs-review"
 SORT confidence ASC, file.mtime DESC
 ```
@@ -28,7 +28,6 @@ SORT confidence ASC, file.mtime DESC
 - `glossary/terms/` — canonical term translations (→ structured store)
 - `languages/<lang>.md` — per-target-language style cards (→ structured store)
 - `entities/` — proper-noun handling decisions (→ structured store)
-- `idioms/<src>-<tgt>/` — idiom pairs (→ `idioms` vector collection)
 
 ## Lifecycle
 

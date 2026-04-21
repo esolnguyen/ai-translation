@@ -103,11 +103,6 @@ class _EmptyRetriever(KnowledgeRetriever):
     def entity(self, name: str) -> dict[str, Any] | None:
         return None
 
-    def idiom(
-        self, phrase: str, source_lang: str, target_lang: str
-    ) -> dict[str, Any] | None:
-        return None
-
 
 class _FakeAdapter(DocumentAdapter):
     extension = ".txt"

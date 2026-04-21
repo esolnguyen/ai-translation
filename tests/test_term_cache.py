@@ -59,14 +59,6 @@ class _CountingRetriever(KnowledgeRetriever):
             return {"id": "entity-holden", "canonical": "Holden"}
         return None
 
-    def idiom(
-        self,
-        phrase: str,
-        source_lang: str,
-        target_lang: str,
-    ) -> dict[str, Any] | None:
-        return None
-
 
 _UNITS = [
     Unit(

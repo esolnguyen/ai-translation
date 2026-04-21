@@ -15,7 +15,7 @@ In this build:
 - Chroma-backed vector store and local (`bge-m3`) embedder
 - JSON-backed structured stores for glossary, entities, language cards
 - Indexer with differential sync (added / updated / removed counts per collection)
-- Retrieval API (`search`, `glossary`, `examples`, `language_card`, `entity`, `idiom`)
+- Retrieval API (`search`, `glossary`, `examples`, `language_card`, `entity`)
 - `translate kb` CLI over every retrieval surface, plus `translate kb index` and `translate kb examples add` (subcommands of the unified `translate` dispatcher in `src/clis/`).
 
 Deferred: LLM extractor (`translate kb extract`), `translate kb index --watch`,
@@ -52,7 +52,6 @@ translate kb examples add src.txt tgt.txt --src en --tgt ja --domain legal
 translate kb glossary settlement --target ja
 translate kb lang-card ja
 translate kb entity Apple
-translate kb idiom "kick the bucket" --src en --tgt vi
 ```
 
 `@file` in the `examples query` source argument reads the source text from
@@ -77,7 +76,7 @@ src/knowledge/
   core/
     models.py          Note, Chunk, Status, NoteKind, load_note
     vault.py           folder-routed walker
-    chunker.py         H2/H3 splitting; EXAMPLE/IDIOM source extraction
+    chunker.py         H2/H3 splitting; EXAMPLE source extraction
     store.py           Store protocol + VectorRecord + QueryHit
     embedder.py        Embedder protocol
     stores/chroma.py   Chroma backend

@@ -1,4 +1,4 @@
-"""Chunker tests — heading splitting + EXAMPLE/IDIOM source extraction."""
+"""Chunker tests — heading splitting + EXAMPLE source extraction."""
 
 from __future__ import annotations
 

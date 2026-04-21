@@ -34,7 +34,6 @@ def test_sync_adds_all_approved_notes(tmp_path: Path):
     # Every vector collection received at least one chunk.
     assert report.deltas["notes"].added >= 1
     assert report.deltas["examples"].added == 1
-    assert report.deltas["idioms"].added == 1
     assert report.deltas["glossary"].added == 1
     assert report.deltas["entities"].added == 1
     assert report.deltas["languages"].added == 1

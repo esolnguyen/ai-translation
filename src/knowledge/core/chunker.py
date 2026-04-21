@@ -6,7 +6,7 @@ code blocks don't get misread as section headers.
 
 Routing by NoteKind:
     DOMAIN        -> one Chunk per H2/H3 section (plus any preamble)
-    EXAMPLE/IDIOM -> one Chunk embedded on the ``## Source`` section;
+    EXAMPLE       -> one Chunk embedded on the ``## Source`` section;
                      target + notes sections ride along in metadata
     everything else -> returns [] (those kinds are stored in structured
                        stores rather than vectorized)
@@ -75,7 +75,7 @@ def chunk(note: Note) -> list[Chunk]:
     sections = _split_sections(note.body)
     section_map = dict(sections)
 
-    if note.kind in (NoteKind.EXAMPLE, NoteKind.IDIOM):
+    if note.kind == NoteKind.EXAMPLE:
         source_text = section_map.get(("Source",))
         if not source_text:
             # Design mandates embedding on the source field; a missing

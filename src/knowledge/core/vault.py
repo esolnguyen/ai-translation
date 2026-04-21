@@ -2,7 +2,7 @@
 
 The vault layout is fixed by DESIGN-knowledge.md: a known set of top-level
 folders (``domains/``, ``examples/``, ``glossary/terms/``, ``languages/``,
-``entities/``, ``idioms/``). The walker uses the folder a note lives in to
+``entities/``). The walker uses the folder a note lives in to
 decide its ``NoteKind`` — file-level inspection is deliberately avoided so
 the routing stays trivial to reason about.
 """
@@ -21,7 +21,6 @@ _FOLDER_KINDS: tuple[tuple[tuple[str, ...], NoteKind], ...] = (
     (("examples",), NoteKind.EXAMPLE),
     (("languages",), NoteKind.LANGUAGE),
     (("entities",), NoteKind.ENTITY),
-    (("idioms",), NoteKind.IDIOM),
 )
 
 _SKIP_FILENAMES = frozenset({"INDEX.md", "README.md"})

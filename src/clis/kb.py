@@ -110,15 +110,6 @@ def cmd_entity(args: argparse.Namespace) -> int:
     return 0 if entry is not None else 1
 
 
-def cmd_idiom(args: argparse.Namespace) -> int:
-    from knowledge.core.retrieval import Retriever
-
-    retriever = Retriever.from_env()
-    entry = retriever.idiom(args.phrase, source_lang=args.src, target_lang=args.tgt)
-    emit_json(entry)
-    return 0 if entry is not None else 1
-
-
 def build_parser(parser: argparse.ArgumentParser) -> None:
     sub = parser.add_subparsers(dest="kb_command", required=True)
 
@@ -164,9 +155,3 @@ def build_parser(parser: argparse.ArgumentParser) -> None:
     p_entity = sub.add_parser("entity", help="Proper-noun decision lookup")
     p_entity.add_argument("name")
     p_entity.set_defaults(func=cmd_entity)
-
-    p_idiom = sub.add_parser("idiom", help="Idiom-pair lookup")
-    p_idiom.add_argument("phrase")
-    p_idiom.add_argument("--src", required=True)
-    p_idiom.add_argument("--tgt", required=True)
-    p_idiom.set_defaults(func=cmd_idiom)
