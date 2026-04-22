@@ -17,6 +17,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 
+from .ports import MetricProfile
 from .similarity import Embedder, SimilarityScore, bleu_lite, chrf, embedding_cosine
 
 Translator = Callable[[str, str, str], str]
@@ -80,6 +81,79 @@ def default_scorers(embedder: Embedder | None = None) -> list[Scorer]:
     if embedder is not None:
         scorers.append(lambda ref, hyp: embedding_cosine(ref, hyp, embedder=embedder))
     return scorers
+
+
+def _embedding_scorer(embedder: Embedder) -> Scorer:
+    # Named helper (not a lambda) so introspection/debugging surfaces a
+    # real function name rather than ``<lambda>`` in stack traces.
+    def scorer(ref: str, hyp: str) -> SimilarityScore:
+        return embedding_cosine(ref, hyp, embedder=embedder)
+
+    scorer.__name__ = "embedding_cosine_scorer"
+    return scorer
+
+
+_SCORER_BY_NAME: dict[str, Scorer] = {
+    "chrf": chrf,
+    "bleu": bleu_lite,
+}
+
+
+def resolve_scorers(
+    names: Iterable[str],
+    *,
+    embedder: Embedder | None = None,
+    strict: bool = False,
+) -> list[Scorer]:
+    """Turn profile scorer names into concrete callables.
+
+    ``"embedding_cosine"`` is dropped silently when no ``embedder`` is
+    supplied — the caller's profile may list it optimistically for the
+    "if you have a model loaded, use it" case without forcing every
+    CLI run to load LaBSE. Set ``strict=True`` to raise instead when an
+    unknown name is seen or when ``embedding_cosine`` is requested
+    without an embedder.
+    """
+    resolved: list[Scorer] = []
+    for raw in names:
+        name = raw.strip().lower()
+        if name == "embedding_cosine":
+            if embedder is None:
+                if strict:
+                    raise ValueError(
+                        "profile lists 'embedding_cosine' but no embedder supplied"
+                    )
+                continue
+            resolved.append(_embedding_scorer(embedder))
+            continue
+        scorer = _SCORER_BY_NAME.get(name)
+        if scorer is None:
+            if strict:
+                raise ValueError(f"unknown roundtrip scorer: {name!r}")
+            continue
+        resolved.append(scorer)
+    return resolved
+
+
+def scorers_for_profile(
+    profile: MetricProfile,
+    *,
+    embedder: Embedder | None = None,
+    strict: bool = False,
+) -> list[Scorer]:
+    """Build the scorer suite for a language per its MetricProfile.
+
+    Falls back to :func:`default_scorers` when the profile lists no
+    round-trip scorers — keeps callers from accidentally running with an
+    empty suite if a vault card predates the ``roundtrip_scorers`` key.
+    """
+    if not profile.roundtrip_scorer_names:
+        return default_scorers(embedder=embedder)
+    return resolve_scorers(
+        profile.roundtrip_scorer_names,
+        embedder=embedder,
+        strict=strict,
+    )
 
 
 def round_trip(

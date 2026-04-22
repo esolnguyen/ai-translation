@@ -82,11 +82,16 @@ def _build_profile(lang: str, data: dict[str, Any]) -> MetricProfile:
     checks = [str(name) for name in raw_checks if isinstance(name, str)]
     if not checks:
         checks = list(default_profile(lang).custom_check_names)
+    raw_scorers = data.get("roundtrip_scorers") or []
+    scorers = [str(name) for name in raw_scorers if isinstance(name, str)]
+    if not scorers:
+        scorers = list(default_profile(lang).roundtrip_scorer_names)
     return MetricProfile(
         lang=lang,
         weights=weights,
         repair_max_passes=max(1, max_passes),
         custom_check_names=checks,
+        roundtrip_scorer_names=scorers,
     )
 
 
