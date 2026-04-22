@@ -36,7 +36,9 @@ from .roundtrip import (
     Scorer,
     Translator,
     default_scorers,
+    resolve_scorers,
     round_trip,
+    scorers_for_profile,
 )
 from .similarity import (
     Embedder,
@@ -75,5 +77,7 @@ __all__ = [
     "default_profile",
     "default_scorers",
     "embedding_cosine",
+    "resolve_scorers",
     "round_trip",
+    "scorers_for_profile",
 ]

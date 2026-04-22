@@ -39,6 +39,12 @@ class MetricProfile:
     weights: MetricWeights
     repair_max_passes: int = 1
     custom_check_names: list[str] = field(default_factory=list)
+    # Names of scorers (see :mod:`metrics.roundtrip.resolve_scorers`) that
+    # the round-trip driver should run on source vs back-translation for
+    # this target language. Per-language because no single scorer wins
+    # across morphology/tokenization regimes — see the docstrings on
+    # :func:`metrics.similarity.chrf` and :func:`metrics.similarity.bleu_lite`.
+    roundtrip_scorer_names: list[str] = field(default_factory=list)
 
 
 class CustomCheck(ABC):
