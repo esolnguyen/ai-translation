@@ -1,7 +1,7 @@
 ---
 name: translate-analyze
-description: Document analyzer. Reads the extracted units, retrieves domain context from the vault (direct reads on Fast, `translate kb search` on Full), and produces a domain prime (domain, sub-domain, tone, register, audience, retrieved note ids). Output is injected verbatim into later skills — this is the single most important prompt anchor in the pipeline.
-tools: Bash, Read, Write, Glob, Grep
+description: Document analyzer. Reads the extracted units, retrieves domain context via `translate kb search`, and produces a domain prime (domain, sub-domain, tone, register, audience, retrieved note ids). Output is injected verbatim into later skills — this is the single most important prompt anchor in the pipeline.
+tools: Bash, Read, Write
 ---
 
 # translate-analyze
@@ -13,7 +13,6 @@ First skill in the chain. Runs **once per run**, before resolver / glossary / tr
 - `run_dir` — `.translate-runs/<run-id>/`
 - `units_path` — `<run_dir>/units.jsonl`
 - `source_lang` — from the orchestrator
-- `mode` — `full` (default) or `fast`. On `fast`, retrieve domain context by reading vault files directly instead of calling `translate kb search`. Same output schema either way.
 
 Optional:
 - `domain_hint` — user-supplied domain guess (e.g. `legal`, `automotive`). Biases retrieval but is not authoritative.
@@ -22,9 +21,7 @@ Optional:
 
 1. Read the first ~2000 tokens of `units.jsonl` — enough to establish domain / register without dragging the whole document through context. If the document is shorter, read all of it.
 2. Summarize the corpus in one paragraph (**internal only** — do not emit). Use the summary as the retrieval query.
-3. Retrieve domain context:
-    - **Full mode:** `translate kb search "<summary>" --domain <domain_hint if any> --k 5` — parse the JSON response for the top-5 note ids and their excerpts.
-    - **Fast mode:** skip the embedder round-trip. `Glob $KB_VAULT/domains/*/` (default vault is `./vault`) to enumerate available domains, pick the one whose folder name best matches the summary / `domain_hint`, then `Glob $KB_VAULT/domains/<domain>/*.md` and Read the `INDEX.md` plus up to 4 other notes whose filenames match the doc's technical vocabulary. Populate `retrieved_notes` from those — id = filename stem, score = `null` (no vector score), excerpt = first ~200 chars of body. Rationale: on a small vault (<100 notes) enumeration beats vector search on every dimension, and the KB subprocess cold-start dwarfs actual retrieval cost.
+3. Retrieve domain context: `translate kb search "<summary>" --domain <domain_hint if any> --k 5` — parse the JSON response for the top-5 note ids and their excerpts. All retrieval goes through the KB subprocess; do not read vault files directly.
 4. Decide:
     - `domain` — single canonical domain string (prefer one that matches the vault's `domains/<domain>/` folder names). If none fits, `general`.
     - `sub_domain` — narrower slice (e.g. domain=`automotive`, sub_domain=`brake-service-bulletin`).
@@ -58,7 +55,7 @@ Emit the same JSON to stdout so the orchestrator can inline it into the translat
 
 ## Do not
 
-- Read vault files directly **in Full mode** — that path routes through `translate kb` for indexing discipline. Fast mode is the intentional bypass.
+- Read vault files directly — all retrieval routes through `translate kb` for indexing discipline and warm-embedder reuse across calls in the same session.
 - Fabricate a domain when retrieval returns nothing relevant — fall back to `general` and say so.
 - Summarize the retrieved notes beyond `excerpt` — callers want the prime lean.
 - Re-run per chunk. This is document-level state.

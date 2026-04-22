@@ -34,9 +34,9 @@ Supported source formats: `.txt`, `.md`, `.docx`, `.srt`, `.xlsx`. **PDF is reje
     - no user override to `--full`
    Otherwise pick **Full**. Record the choice in `manifest.json` as `path: "fast" | "full"`.
 5. **Document-level state (once per run, shared across all target languages).**
-    - `translate-analyze` → `<run_dir>/analysis.json` (domain, sub-domain, tone, register, retrieved note ids). *Always runs — cheap, single call.*
+    - `translate-analyze` → `<run_dir>/analysis.json` (domain, sub-domain, tone, register, retrieved note ids). Always runs — single `translate kb search` call.
     - `translate-resolve-terms` → `<run_dir>/resolved-terms.<lang>.json`. **Full path only.** Fast path folds polysemy locks into the glossary step via a tighter prompt.
-    - `translate-glossary` → `<run_dir>/glossary.<lang>.json` (merges `translate kb glossary` + `translate kb entity` + resolved terms on full path; Fast path skips the resolve merge and reads vault files directly — no `translate kb` subprocess, no embedder cold-start).
+    - `translate-glossary` → `<run_dir>/glossary.<lang>.json` (merges `translate kb glossary` + `translate kb entity` + resolved terms when available). Both paths drive the KB subprocess — Fast path just skips the resolved-terms merge since the resolver didn't run.
 6. **Dispatch by path:**
     - **Fast path (≤100 units, single target, text-like format):** invoke `translate-translate` once per chunk with `--pass fast` — a single-pass translation that inlines the glossary and style card, flags nothing, and writes straight to `<run_dir>/<lang>/chunks/<id>.md`. No cycle-check, no reviewer, no edit. Rationale: for short documents cross-chunk drift is bounded; the full chain's consistency guarantees don't earn their latency.
     - **Full path / Flow A (single target, text-like format, >100 units):** run the chain inline in the main thread — `translate-translate` pass 1 → `translate-cycle-check` → `translate-translate` pass 2 → `translation-reviewer` subagent → `translate-edit`, chunk by chunk.
