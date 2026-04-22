@@ -30,6 +30,21 @@ from .ports import (
 )
 from .profile_registry import DefaultMetricProfileRegistry, default_profile
 from .registry import InMemoryCustomCheckRegistry, default_custom_check_registry
+from .roundtrip import (
+    RoundTripLeg,
+    RoundTripReport,
+    Scorer,
+    Translator,
+    default_scorers,
+    round_trip,
+)
+from .similarity import (
+    Embedder,
+    SimilarityScore,
+    bleu_lite,
+    chrf,
+    embedding_cosine,
+)
 from .vault_loader import VaultMetricProfileRegistry
 
 __all__ = [
@@ -38,6 +53,7 @@ __all__ = [
     "CustomCheckRegistry",
     "CustomCheckResult",
     "DefaultMetricProfileRegistry",
+    "Embedder",
     "GlossaryAdherenceCheck",
     "InMemoryCustomCheckRegistry",
     "LengthSanityCheck",
@@ -46,8 +62,18 @@ __all__ = [
     "MetricProfileRegistry",
     "MetricWeights",
     "PlaceholderRoundTripCheck",
+    "RoundTripLeg",
+    "RoundTripReport",
+    "Scorer",
+    "SimilarityScore",
     "TagBalanceCheck",
+    "Translator",
     "VaultMetricProfileRegistry",
+    "bleu_lite",
+    "chrf",
     "default_custom_check_registry",
     "default_profile",
+    "default_scorers",
+    "embedding_cosine",
+    "round_trip",
 ]
