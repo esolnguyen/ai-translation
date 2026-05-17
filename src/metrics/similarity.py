@@ -148,9 +148,6 @@ def embedding_cosine(
     if len(vectors) < 2:
         return SimilarityScore(name="embedding_cosine", value=0.0)
     raw = _cosine(list(vectors[0]), list(vectors[1]))
-    # Translation similarity is almost always >= 0; negative values are
-    # numerical noise for this use case — clamp so downstream averaging
-    # isn't skewed by outliers.
     clamped = max(0.0, raw)
     return SimilarityScore(
         name="embedding_cosine",
@@ -160,9 +157,6 @@ def embedding_cosine(
 
 
 def _normalize(text: str) -> str:
-    # NFKC folds compatibility forms (fullwidth CJK, ligatures) so two
-    # visually equivalent strings score the same. Whitespace is
-    # collapsed so line-break differences don't perturb chrF.
     normalized = unicodedata.normalize("NFKC", text)
     return re.sub(r"\s+", " ", normalized).strip().lower()
 

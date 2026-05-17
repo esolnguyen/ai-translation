@@ -1,5 +1,5 @@
 ---
-title: Audi Serviceverfahren — Kühlmitteltemperatursensor und Fensterheber
+title: Audi Servicearbeiten — Kühlmitteltemperatursensor und Fensterheber
 source: test.json (es → de translation benchmark, 11 items)
 source_lang: es
 target_lang: de
@@ -9,13 +9,13 @@ register: technical-formal
 audience: Audi workshop technicians
 ---
 
-# Audi Serviceverfahren
+# Audi Servicearbeiten
 
 Elf technische Sätze aus einem Werkstatthandbuch (Modelle A4 / A6), die den Ausbau von Türverkleidungen, Prüfungen des Fensterhebers und die Diagnose des Kühlmitteltemperatursensors abdecken. Jedes nummerierte Listenelement entspricht eins zu eins `test_data[N − 1].input_text` in `test.json`, sodass die erzeugten Übersetzungen anschließend mit den akzeptierten Varianten in `expected_answer` verglichen werden können.
 
 ## Ausbau und Erstprüfung
 
-1. Türverkleidung und Schutzabdeckung ausbauen
+1. Türverkleidung und Schutzabdeckung demontieren
 2. Ordnungsgemäße Funktion des Fensterhebers prüfen.
 
 ## Betroffene Fahrzeuge
@@ -24,12 +24,12 @@ Elf technische Sätze aus einem Werkstatthandbuch (Modelle A4 / A6), die den Aus
 
 ## Kühlmitteltemperatursensor
 
-4. Die vom Kühlmitteltemperatursensor empfangenen Informationen werden direkt zur Anpassung der Einspritzzeit verwendet.
-5. Bei diesen Vorgängen kommt es vor, dass das Sensorgehäuse durchlässig wird, sodass das Kühlmittel in das Innere gelangt und es korrodiert.
+4. Die vom Kühlmitteltemperatursensor empfangenen Informationen werden direkt für die Einstellung der Einspritzzeit verwendet.
+5. Bei diesen Vorgängen kommt es vor, dass das Sensorgehäuse perforiert wird, wodurch das Kühlmittel in das Innere gelangt und es korrodiert.
 
 ## Prüfungen vor dem Austausch
 
-6. Vor dem Austausch sind folgende Prüfungen durchzuführen (unter Bezugnahme auf die Prüfdaten des Fahrzeugs):
+6. Vor dem Austausch sind folgende Prüfungen durchzuführen (unter Bezugnahme auf die Fahrzeugprüfdaten):
 7. Bei abgezogenem Stecker und eingeschalteter Zündung die Referenzspannung.
 8. Sensorwiderstand.
 9. Ableitungen an den Sensorkontakten.

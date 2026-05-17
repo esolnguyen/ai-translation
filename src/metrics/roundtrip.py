@@ -57,16 +57,12 @@ class RoundTripReport:
         a missing cosine score (no embedder) is not the same signal as
         a 0.0 score (embedder ran, found no overlap).
         """
-        scored = [
-            (leg.target_lang, leg.score(scorer))
-            for leg in self.legs
-            if leg.score(scorer) is not None
-        ]
-        return sorted(
-            ((lang, value) for lang, value in scored if value is not None),
-            key=lambda pair: pair[1],
-            reverse=True,
-        )
+        scored: list[tuple[str, float]] = []
+        for leg in self.legs:
+            value = leg.score(scorer)
+            if value is not None:
+                scored.append((leg.target_lang, value))
+        return sorted(scored, key=lambda pair: pair[1], reverse=True)
 
 
 def default_scorers(embedder: Embedder | None = None) -> list[Scorer]:
@@ -79,7 +75,7 @@ def default_scorers(embedder: Embedder | None = None) -> list[Scorer]:
     """
     scorers: list[Scorer] = [chrf, bleu_lite]
     if embedder is not None:
-        scorers.append(lambda ref, hyp: embedding_cosine(ref, hyp, embedder=embedder))
+        scorers.append(_embedding_scorer(embedder))
     return scorers
 
 
